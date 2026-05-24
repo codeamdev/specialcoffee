@@ -1,0 +1,44 @@
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+build/
+*.g.dart
+*.freezed.dart
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Firebase — nunca commitear
+google-services.json
+GoogleService-Info.plist
+lib/firebase_options.dart
+
+# Env / Secrets
+.env
+.env.*
+secrets/
+
+# API keys — nunca commitear
+lib/core/config/gemini_config.dart
+
+# Python
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+backend/auth/venv/
+backend/artifacts/*.exe
+backend/artifacts/*.bin
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Assets — fuentes deben estar en repo pero no binarios grandes
+# assets/fonts/*.ttf  <- sí commitear
+# assets/images/*.png <- evaluar por tamaño
