@@ -17,7 +17,7 @@ import 'package:timezone/timezone.dart' as tz;
 ///   AndroidManifest.xml:
 ///     `<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>`
 ///     `<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>`
-///     `<uses-permission android:name="android.permission.USE_EXACT_ALARM"/>` (API 33+)
+///   USE_EXACT_ALARM no se declara — usamos inexactAllowWhileIdle.
 class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
