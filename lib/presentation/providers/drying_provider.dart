@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:special_coffee/ai_engine/models/ai_context.dart';
 import 'package:special_coffee/ai_engine/models/ai_rule.dart';
 import 'package:special_coffee/core/di/providers.dart';
+import 'package:special_coffee/core/notifications/notification_service.dart';
 import 'package:special_coffee/presentation/providers/ai_engine_provider.dart';
 import 'package:special_coffee/presentation/providers/auth_provider.dart';
 import 'package:special_coffee/presentation/providers/lot_provider.dart';
@@ -219,6 +220,19 @@ class DryingNotifier extends _$DryingNotifier {
           uvIndex: uvIndex,
         );
       } catch (_) {}
+    }
+
+    // Fire moisture notifications and schedule next daily reminder
+    _fireDryingNotification(moisturePct, state.lotId);
+    NotificationService.instance.scheduleDryingReminder(lotId: state.lotId);
+  }
+
+  void _fireDryingNotification(double moisturePct, String lotId) {
+    final ns = NotificationService.instance;
+    if (moisturePct < 10.0) {
+      ns.showDryingOverDried(lotId: lotId, moisturePct: moisturePct);
+    } else if (moisturePct >= 10.5 && moisturePct <= 12.0) {
+      ns.showDryingTargetReached(lotId: lotId, moisturePct: moisturePct);
     }
   }
 

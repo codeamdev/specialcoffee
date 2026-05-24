@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:special_coffee/ai_engine/ai_engine.dart';
 import 'package:special_coffee/core/di/providers.dart';
+import 'package:special_coffee/core/notifications/notification_service.dart';
 import 'package:special_coffee/presentation/providers/ai_engine_provider.dart';
 import 'package:special_coffee/presentation/providers/auth_provider.dart';
 import 'package:special_coffee/presentation/providers/lot_provider.dart';
@@ -150,6 +151,12 @@ class FermentationNotifier extends _$FermentationNotifier {
       isAnalyzing: true,
     );
 
+    // Fire notification for actionable alerts
+    _fireAlertNotification(alerts, state.lotId);
+    // Schedule next reading reminder (4 h from now)
+    NotificationService.instance
+        .scheduleFermentationReminder(lotId: state.lotId);
+
     // Full RuleEngine evaluation with complete context
     try {
       final userId = ref.read(currentUserIdProvider);
@@ -230,5 +237,21 @@ class FermentationNotifier extends _$FermentationNotifier {
           ));
     }
     state = FermentationState(lotId: state.lotId, processType: state.processType);
+  }
+
+  void _fireAlertNotification(List<Alert> alerts, String lotId) {
+    if (alerts.isEmpty) return;
+    final ns = NotificationService.instance;
+    final worst = alerts.reduce(
+      (a, b) => a.level.index > b.level.index ? a : b,
+    );
+    final msg =
+        'pH ${worst.triggerValue.toStringAsFixed(2)} — umbral ${worst.threshold.toStringAsFixed(2)}. '
+        'Proceso: ${state.processType}.';
+    if (worst.level == AlertLevel.critical) {
+      ns.showFermentationCriticalAlert(lotId: lotId, message: msg);
+    } else if (worst.level.index >= AlertLevel.warning.index) {
+      ns.showFermentationWarning(lotId: lotId, message: msg);
+    }
   }
 }
