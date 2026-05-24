@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:special_coffee/ai_engine/models/ai_context.dart';
 import 'package:special_coffee/ai_engine/models/ai_rule.dart';
+import 'package:special_coffee/core/di/providers.dart';
 import 'package:special_coffee/presentation/providers/ai_engine_provider.dart';
 import 'package:special_coffee/presentation/providers/auth_provider.dart';
 import 'package:special_coffee/presentation/providers/lot_provider.dart';
@@ -19,11 +20,11 @@ class DryingReading {
     required this.recordedAt,
   });
 
-  final int      dayNumber;
-  final double   moisturePct;
-  final double   ambientTempC;
-  final double   ambientHumidityPct;
-  final double   uvIndex;
+  final int dayNumber;
+  final double moisturePct;
+  final double ambientTempC;
+  final double ambientHumidityPct;
+  final double uvIndex;
   final DateTime recordedAt;
 }
 
@@ -32,19 +33,23 @@ class DryingReading {
 class DryingState {
   const DryingState({
     required this.lotId,
+    this.sessionId,
+    this.sessionStartedAt,
     this.dryingMethod = 'camas_africanas',
     this.readings = const [],
     this.recommendations = const [],
     this.isAnalyzing = false,
   });
 
-  final String               lotId;
-  final String               dryingMethod;
-  final List<DryingReading>  readings;
+  final String lotId;
+  final String? sessionId;
+  final DateTime? sessionStartedAt;
+  final String dryingMethod;
+  final List<DryingReading> readings;
   final List<Recommendation> recommendations;
-  final bool                 isAnalyzing;
+  final bool isAnalyzing;
 
-  bool get hasReadings  => readings.isNotEmpty;
+  bool get hasReadings => readings.isNotEmpty;
   DryingReading? get lastReading => readings.isEmpty ? null : readings.last;
 
   bool get isAtTarget {
@@ -55,7 +60,18 @@ class DryingState {
 
   bool get isOverDried => hasReadings && lastReading!.moisturePct < 10.0;
 
+  int get nextDayNumber {
+    if (sessionStartedAt != null) {
+      return (DateTime.now().difference(sessionStartedAt!).inHours / 24)
+              .floor() +
+          1;
+    }
+    return readings.length + 1;
+  }
+
   DryingState copyWith({
+    String? Function()? sessionId,
+    DateTime? Function()? sessionStartedAt,
     String? dryingMethod,
     List<DryingReading>? readings,
     List<Recommendation>? recommendations,
@@ -63,6 +79,10 @@ class DryingState {
   }) =>
       DryingState(
         lotId: lotId,
+        sessionId: sessionId != null ? sessionId() : this.sessionId,
+        sessionStartedAt: sessionStartedAt != null
+            ? sessionStartedAt()
+            : this.sessionStartedAt,
         dryingMethod: dryingMethod ?? this.dryingMethod,
         readings: readings ?? this.readings,
         recommendations: recommendations ?? this.recommendations,
@@ -75,7 +95,40 @@ class DryingState {
 @riverpod
 class DryingNotifier extends _$DryingNotifier {
   @override
-  DryingState build(String lotId) => DryingState(lotId: lotId);
+  DryingState build(String lotId) {
+    _loadPersistedSession(lotId);
+    return DryingState(lotId: lotId);
+  }
+
+  void _loadPersistedSession(String lotId) {
+    final repo = ref.read(dryingLocalRepoProvider);
+    Future(() async {
+      try {
+        final session = await repo.getActiveSession(lotId);
+        if (session == null) return;
+        final records = await repo.getReadings(session.id);
+        final readings = records
+            .map((r) => DryingReading(
+                  dayNumber: r.dayNumber,
+                  moisturePct: r.moisturePct,
+                  ambientTempC: r.ambientTempC,
+                  ambientHumidityPct: r.ambientHumidityPct,
+                  uvIndex: r.uvIndex,
+                  recordedAt: r.recordedAt,
+                ))
+            .toList();
+        state = DryingState(
+          lotId: lotId,
+          sessionId: session.id,
+          sessionStartedAt: session.startedAt,
+          dryingMethod: session.dryingMethod,
+          readings: readings,
+        );
+      } catch (_) {
+        // Persistence unavailable — start fresh in-memory session
+      }
+    });
+  }
 
   Future<void> addReading({
     required double moisturePct,
@@ -83,21 +136,43 @@ class DryingNotifier extends _$DryingNotifier {
     required double ambientHumidityPct,
     double uvIndex = 0.0,
   }) async {
-    final dayNumber = state.readings.length + 1;
+    // 1. Ensure session exists
+    final repo = ref.read(dryingLocalRepoProvider);
+    String? sessionId = state.sessionId;
+    DateTime? sessionStartedAt = state.sessionStartedAt;
+    if (sessionId == null) {
+      try {
+        final session = await repo.createSession(
+          lotId: state.lotId,
+          dryingMethod: state.dryingMethod,
+        );
+        sessionId = session.id;
+        sessionStartedAt = session.startedAt;
+        state = state.copyWith(
+          sessionId: () => sessionId,
+          sessionStartedAt: () => sessionStartedAt,
+        );
+      } catch (_) {
+        // Proceed without persistence
+      }
+    }
+
+    final dayNumber = state.nextDayNumber;
+    final now = DateTime.now();
     final newReading = DryingReading(
       dayNumber: dayNumber,
       moisturePct: moisturePct,
       ambientTempC: ambientTempC,
       ambientHumidityPct: ambientHumidityPct,
       uvIndex: uvIndex,
-      recordedAt: DateTime.now(),
+      recordedAt: now,
     );
     final updatedReadings = [...state.readings, newReading];
 
     state = state.copyWith(readings: updatedReadings, isAnalyzing: true);
 
     try {
-      final userId  = ref.read(currentUserIdProvider);
+      final userId = ref.read(currentUserIdProvider);
       final roleStr = ref.read(currentUserProvider)?.role ?? 'farmer';
       final userRole = UserRole.values.firstWhere(
         (r) => r.name == roleStr,
@@ -124,11 +199,26 @@ class DryingNotifier extends _$DryingNotifier {
       );
 
       final engine = await ref.read(aiEngineProvider.future);
-      final recs   = await engine.recommend(aiContext);
+      final recs = await engine.recommend(aiContext);
       ref.invalidate(geminiStatusProvider);
       state = state.copyWith(recommendations: recs, isAnalyzing: false);
     } catch (_) {
       state = state.copyWith(isAnalyzing: false);
+    }
+
+    // Persist to Drift
+    if (sessionId != null) {
+      try {
+        await repo.addReading(
+          sessionId: sessionId,
+          lotId: state.lotId,
+          dayNumber: dayNumber,
+          moisturePct: moisturePct,
+          ambientTempC: ambientTempC,
+          ambientHumidityPct: ambientHumidityPct,
+          uvIndex: uvIndex,
+        );
+      } catch (_) {}
     }
   }
 
@@ -137,6 +227,18 @@ class DryingNotifier extends _$DryingNotifier {
     state = DryingState(lotId: state.lotId, dryingMethod: method);
   }
 
-  void reset() =>
-      state = DryingState(lotId: state.lotId, dryingMethod: state.dryingMethod);
+  void reset() {
+    final sessionId = state.sessionId;
+    if (sessionId != null) {
+      final repo = ref.read(dryingLocalRepoProvider);
+      final finalMoisture =
+          state.readings.isEmpty ? 0.0 : state.readings.last.moisturePct;
+      Future(() => repo.closeSession(
+            sessionId: sessionId,
+            finalMoisturePct: finalMoisture,
+          ));
+    }
+    state = DryingState(
+        lotId: state.lotId, dryingMethod: state.dryingMethod);
+  }
 }

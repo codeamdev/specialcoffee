@@ -1,8 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:special_coffee/ai_engine/ai_engine.dart';
-import 'package:special_coffee/ai_engine/models/ai_context.dart';
-import 'package:special_coffee/ai_engine/models/ai_rule.dart';
-import 'package:special_coffee/ai_engine/models/alert.dart';
+import 'package:special_coffee/core/di/providers.dart';
 import 'package:special_coffee/presentation/providers/ai_engine_provider.dart';
 import 'package:special_coffee/presentation/providers/auth_provider.dart';
 import 'package:special_coffee/presentation/providers/lot_provider.dart';
@@ -13,6 +11,7 @@ part 'fermentation_provider.g.dart';
 
 class FermentationState {
   final String lotId;
+  final String? sessionId;
   final String processType;
   final List<FermentationReading> readings;
   final List<Alert> activeAlerts;
@@ -22,6 +21,7 @@ class FermentationState {
 
   const FermentationState({
     required this.lotId,
+    this.sessionId,
     required this.processType,
     this.readings = const [],
     this.activeAlerts = const [],
@@ -36,8 +36,8 @@ class FermentationState {
   FermentationReading? get lastReading =>
       readings.isEmpty ? null : readings.last;
 
-  /// Use `projectedHoursRemaining: () => null` to explicitly clear the field.
   FermentationState copyWith({
+    String? Function()? sessionId,
     String? processType,
     List<FermentationReading>? readings,
     List<Alert>? activeAlerts,
@@ -47,6 +47,7 @@ class FermentationState {
   }) =>
       FermentationState(
         lotId: lotId,
+        sessionId: sessionId != null ? sessionId() : this.sessionId,
         processType: processType ?? this.processType,
         readings: readings ?? this.readings,
         activeAlerts: activeAlerts ?? this.activeAlerts,
@@ -63,8 +64,36 @@ class FermentationState {
 @riverpod
 class FermentationNotifier extends _$FermentationNotifier {
   @override
-  FermentationState build(String lotId) =>
-      FermentationState(lotId: lotId, processType: 'lavado');
+  FermentationState build(String lotId) {
+    _loadPersistedSession(lotId);
+    return FermentationState(lotId: lotId, processType: 'lavado');
+  }
+
+  void _loadPersistedSession(String lotId) {
+    final repo = ref.read(fermentationLocalRepoProvider);
+    Future(() async {
+      try {
+        final session = await repo.getActiveSession(lotId);
+        if (session == null) return;
+        final records = await repo.getReadings(session.id);
+        final aiReadings = records
+            .map((r) => FermentationReading(
+                  hoursElapsed: r.hoursElapsed,
+                  phValue: r.phValue,
+                  tempC: r.mucilagoTempC,
+                ))
+            .toList();
+        state = FermentationState(
+          lotId: lotId,
+          sessionId: session.id,
+          processType: session.processType,
+          readings: aiReadings,
+        );
+      } catch (_) {
+        // Persistence unavailable — start fresh in-memory session
+      }
+    });
+  }
 
   Future<void> addReading({
     required double ph,
@@ -72,6 +101,23 @@ class FermentationNotifier extends _$FermentationNotifier {
     required double hoursElapsed,
     String mucilageState = '',
   }) async {
+    // 1. Ensure session exists before doing any work
+    final repo = ref.read(fermentationLocalRepoProvider);
+    String? sessionId = state.sessionId;
+    if (sessionId == null) {
+      try {
+        final session = await repo.createSession(
+          lotId: state.lotId,
+          processType: state.processType,
+        );
+        sessionId = session.id;
+        state = state.copyWith(sessionId: () => sessionId);
+      } catch (_) {
+        // Proceed without persistence if DB is unavailable
+      }
+    }
+
+    final readingNumber = state.readings.length + 1;
     final newReading = FermentationReading(
       hoursElapsed: hoursElapsed,
       phValue: ph,
@@ -81,7 +127,7 @@ class FermentationNotifier extends _$FermentationNotifier {
 
     final engine = await ref.read(aiEngineProvider.future);
 
-    // AlertEngine — immediate threshold check (<1ms), always first
+    // AlertEngine — immediate threshold check, always first
     final alerts = engine.checkFermentationReading(
       ph: ph,
       mucilagoTemp: tempC,
@@ -97,7 +143,6 @@ class FermentationNotifier extends _$FermentationNotifier {
           )
         : null;
 
-    // Publish alerts + readings immediately before full analysis
     state = state.copyWith(
       readings: updatedReadings,
       activeAlerts: alerts,
@@ -107,7 +152,7 @@ class FermentationNotifier extends _$FermentationNotifier {
 
     // Full RuleEngine evaluation with complete context
     try {
-      final userId  = ref.read(currentUserIdProvider);
+      final userId = ref.read(currentUserIdProvider);
       final roleStr = ref.read(currentUserProvider)?.role ?? 'farmer';
       final userRole = UserRole.values.firstWhere(
         (r) => r.name == roleStr,
@@ -140,14 +185,50 @@ class FermentationNotifier extends _$FermentationNotifier {
     } catch (_) {
       state = state.copyWith(isAnalyzing: false);
     }
+
+    // Persist reading to Drift (after AI analysis — fire and track errors silently)
+    if (sessionId != null) {
+      try {
+        final alertLevel =
+            alerts.isEmpty ? 'none' : alerts.first.level.name;
+        final alertRuleId = alerts.isEmpty ? null : alerts.first.ruleId;
+        await repo.addReading(
+          sessionId: sessionId,
+          lotId: state.lotId,
+          readingNumber: readingNumber,
+          hoursElapsed: hoursElapsed,
+          phValue: ph,
+          mucilagoTempC: tempC,
+          mucilageState: mucilageState.isEmpty ? 'liquid' : mucilageState,
+          aiAlertLevel: alertLevel,
+          aiAlertRuleId: alertRuleId,
+          aiProjectedEndH: projection,
+        );
+      } catch (_) {}
+    }
   }
 
-  /// Process type can only be changed before the first reading is registered.
+  /// Process type can only change before the first reading.
   void changeProcessType(String processType) {
     if (state.hasReadings) return;
     state = FermentationState(lotId: state.lotId, processType: processType);
   }
 
-  void reset() =>
-      state = FermentationState(lotId: state.lotId, processType: state.processType);
+  void reset() {
+    final sessionId = state.sessionId;
+    if (sessionId != null) {
+      final repo = ref.read(fermentationLocalRepoProvider);
+      final phFinal =
+          state.readings.isEmpty ? 0.0 : state.readings.last.phValue;
+      final durationH =
+          state.readings.isEmpty ? 0.0 : state.readings.last.hoursElapsed;
+      Future(() => repo.closeSession(
+            sessionId: sessionId,
+            endReason: 'reset',
+            actualDurationH: durationH,
+            phFinal: phFinal,
+          ));
+    }
+    state = FermentationState(lotId: state.lotId, processType: state.processType);
+  }
 }
