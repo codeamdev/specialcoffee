@@ -42,8 +42,10 @@ dependencies:
   logger: ^2.5.0
   equatable: ^2.0.5
 
-  # Notifications
+  # Notifications + timezone (zonedSchedule — works with app closed)
   flutter_local_notifications: ^18.0.1
+  timezone: ^0.9.4
+  flutter_timezone: ^1.0.4
 
   # UI helpers
   cached_network_image: ^3.4.1
