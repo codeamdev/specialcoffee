@@ -2,36 +2,36 @@ import 'package:special_coffee/ai_engine/models/ai_rule.dart';
 
 abstract final class HarvestRules {
   static List<AIRule> get all => [
-    // ── COSECHA ÓPTIMA ────────────────────────────────────────────────────────
+    // ── BRIX CRÍTICO — bloquear cosecha ──────────────────────────────────────
     const AIRule(
-      id: 'HARV-BRIX-OPTIMAL-001',
+      id: 'HARV-BRIX-CRITICAL-001',
       module: 'harvest',
-      name: 'Brix en rango óptimo para cosecha',
-      priority: 2,
+      name: 'Brix crítico — cosecha bloqueada',
+      priority: 1,
       logic: RuleLogic.and,
-      tags: ['brix', 'harvest', 'go'],
+      tags: ['brix', 'harvest', 'critical'],
       conditions: [
-        RuleCondition(variable: 'brix_level', operator: ConditionOperator.between, threshold: 20.0, thresholdMax: 24.0),
-        RuleCondition(variable: 'cherry_color_pct', operator: ConditionOperator.gte, threshold: 75),
+        RuleCondition(variable: 'brix_level', operator: ConditionOperator.lt, threshold: 15.0),
       ],
       outcome: RuleOutcome(
-        action: 'HARVEST_NOW',
-        alertLevel: AlertLevel.none,
-        confidenceBase: 0.92,
+        action: 'BLOCK_HARVEST',
+        alertLevel: AlertLevel.critical,
+        confidenceBase: 0.97,
         explanationByRole: {
-          'farmer': '✅ Coseche ahora — sus cerezas están en el punto justo de madurez.',
-          'processor': '✅ Brix {brix_level}° y {cherry_color_pct}% de color rojo. Condiciones óptimas de cosecha.',
-          'barista': '✅ Brix {brix_level}° — madurez completa. Perfil azucarado esperado en taza.',
+          'farmer': '🚫 NO coseche. Brix {brix_level}° es demasiado bajo — el café estará amargo y sin dulzura.',
+          'processor': '🚫 Brix {brix_level}° — crítico. Cosecha bloqueada: azúcares insuficientes para fermentación viable.',
+          'barista': '🚫 Brix {brix_level}° — subdesarrollo severo. Taza sin dulzura, alta astringencia garantizada.',
         },
         suggestedActions: [
-          'Iniciar cosecha selectiva en las próximas 36 horas',
-          'Separar cerezas por nivel de madurez si es posible',
+          'No cosechar bajo ninguna circunstancia',
+          'Esperar mínimo 7–10 días y retomar medición',
+          'Revisar nutrición del suelo si el Brix no sube en 2 semanas',
         ],
-        parameters: {'harvest_window_hours': 36},
+        parameters: {'wait_days_min': 7},
       ),
     ),
 
-    // ── COSECHA PREMATURA ─────────────────────────────────────────────────────
+    // ── BRIX BAJO — advertencia fuerte ───────────────────────────────────────
     const AIRule(
       id: 'HARV-BRIX-LOW-001',
       module: 'harvest',
@@ -40,7 +40,7 @@ abstract final class HarvestRules {
       logic: RuleLogic.and,
       tags: ['brix', 'harvest', 'warning'],
       conditions: [
-        RuleCondition(variable: 'brix_level', operator: ConditionOperator.between, threshold: 17.0, thresholdMax: 19.9),
+        RuleCondition(variable: 'brix_level', operator: ConditionOperator.between, threshold: 15.0, thresholdMax: 17.9),
       ],
       outcome: RuleOutcome(
         action: 'DELAY_HARVEST',
@@ -64,6 +64,64 @@ abstract final class HarvestRules {
       ),
     ),
 
+    // ── COSECHA ÓPTIMA ────────────────────────────────────────────────────────
+    const AIRule(
+      id: 'HARV-BRIX-OPTIMAL-001',
+      module: 'harvest',
+      name: 'Brix en rango óptimo para cosecha',
+      priority: 2,
+      logic: RuleLogic.and,
+      tags: ['brix', 'harvest', 'go'],
+      conditions: [
+        RuleCondition(variable: 'brix_level', operator: ConditionOperator.between, threshold: 18.0, thresholdMax: 24.0),
+        RuleCondition(variable: 'cherry_color_pct', operator: ConditionOperator.gte, threshold: 75),
+      ],
+      outcome: RuleOutcome(
+        action: 'HARVEST_NOW',
+        alertLevel: AlertLevel.none,
+        confidenceBase: 0.92,
+        explanationByRole: {
+          'farmer': '✅ Coseche ahora — sus cerezas están en el punto justo de madurez.',
+          'processor': '✅ Brix {brix_level}° y {cherry_color_pct}% de color rojo. Condiciones óptimas de cosecha.',
+          'barista': '✅ Brix {brix_level}° — madurez completa. Perfil azucarado esperado en taza.',
+        },
+        suggestedActions: [
+          'Iniciar cosecha selectiva en las próximas 36 horas',
+          'Separar cerezas por nivel de madurez si es posible',
+        ],
+        parameters: {'harvest_window_hours': 36},
+      ),
+    ),
+
+    // ── SOBRE-MADUREZ ─────────────────────────────────────────────────────────
+    const AIRule(
+      id: 'HARV-BRIX-HIGH-001',
+      module: 'harvest',
+      name: 'Brix alto — riesgo de sobre-madurez',
+      priority: 2,
+      logic: RuleLogic.and,
+      tags: ['brix', 'harvest', 'overripe'],
+      conditions: [
+        RuleCondition(variable: 'brix_level', operator: ConditionOperator.gt, threshold: 24.0),
+      ],
+      outcome: RuleOutcome(
+        action: 'HARVEST_URGENT_OVERRIPE',
+        alertLevel: AlertLevel.high,
+        confidenceBase: 0.87,
+        explanationByRole: {
+          'farmer': '⚠️ Coseche hoy. Brix {brix_level}° indica sobre-madurez — las cerezas pueden fermentar en el árbol.',
+          'processor': '⚠️ Brix {brix_level}° supera el umbral de 24°. Sobre-madurez activa: cosechar de inmediato.',
+          'barista': '⚠️ Brix {brix_level}° — sobre-madurez. Riesgo de fermentación indeseada y defectos en taza.',
+        },
+        suggestedActions: [
+          'Cosechar de inmediato para evitar fermentación no controlada',
+          'Procesar en las próximas 6 horas post-cosecha',
+          'Descartar cerezas blandas o con manchas',
+        ],
+        parameters: {'urgency_hours': 6},
+      ),
+    ),
+
     // ── COSECHA URGENTE POR LLUVIA ────────────────────────────────────────────
     const AIRule(
       id: 'HARV-RAIN-URGENT-001',
@@ -73,7 +131,7 @@ abstract final class HarvestRules {
       logic: RuleLogic.and,
       tags: ['harvest', 'weather', 'urgent'],
       conditions: [
-        RuleCondition(variable: 'brix_level', operator: ConditionOperator.between, threshold: 19.0, thresholdMax: 24.0),
+        RuleCondition(variable: 'brix_level', operator: ConditionOperator.between, threshold: 18.0, thresholdMax: 24.0),
         RuleCondition(variable: 'rain_probability_pct', operator: ConditionOperator.gte, threshold: 70.0),
       ],
       outcome: RuleOutcome(
@@ -90,6 +148,65 @@ abstract final class HarvestRules {
           'Priorizar parcelas de mayor altitud (más expuestas)',
         ],
         parameters: {'urgency_hours': 12},
+      ),
+    ),
+
+    // ── EXCESO DE VERDE — advertencia ────────────────────────────────────────
+    // cherry_color_pct < 95 → verde > 5 %
+    const AIRule(
+      id: 'HARV-GREEN-WARN-001',
+      module: 'harvest',
+      name: 'Exceso leve de cerezas verdes (>5 %)',
+      priority: 3,
+      logic: RuleLogic.and,
+      tags: ['ripeness', 'harvest', 'warning'],
+      conditions: [
+        RuleCondition(variable: 'cherry_color_pct', operator: ConditionOperator.between, threshold: 90.0, thresholdMax: 94.9),
+      ],
+      outcome: RuleOutcome(
+        action: 'REDUCE_GREEN_HARVEST',
+        alertLevel: AlertLevel.warning,
+        confidenceBase: 0.82,
+        explanationByRole: {
+          'farmer': '⚠️ Hay más del 5% de cerezas verdes. Instruya a los recolectores para ser más selectivos.',
+          'processor': '⚠️ Verde > 5% ({cherry_color_pct}% maduras). Puede afectar la homogeneidad del lote.',
+          'barista': '⚠️ Verde > 5% — riesgo de heterogeneidad en taza. Ajustar temperatura de extracción.',
+        },
+        suggestedActions: [
+          'Instruir recolectores: solo cerezas rojas o amarillas',
+          'Separar sub-lote de verdes si supera 3 kg',
+        ],
+        parameters: {'green_threshold_pct': 5},
+      ),
+    ),
+
+    // ── EXCESO DE VERDE — alta ────────────────────────────────────────────────
+    // cherry_color_pct < 90 → verde > 10 %
+    const AIRule(
+      id: 'HARV-GREEN-HIGH-001',
+      module: 'harvest',
+      name: 'Exceso severo de cerezas verdes (>10 %)',
+      priority: 2,
+      logic: RuleLogic.and,
+      tags: ['ripeness', 'harvest', 'high'],
+      conditions: [
+        RuleCondition(variable: 'cherry_color_pct', operator: ConditionOperator.lt, threshold: 90.0),
+      ],
+      outcome: RuleOutcome(
+        action: 'STOP_GREEN_HARVEST',
+        alertLevel: AlertLevel.high,
+        confidenceBase: 0.90,
+        explanationByRole: {
+          'farmer': '🔴 Más del 10% son verdes ({cherry_color_pct}% maduras). Suspenda el pase y re-instruya al equipo.',
+          'processor': '🔴 Verde > 10% — lote fuera de estándar de especialidad. Separar o reclasificar cerezas.',
+          'barista': '🔴 Verde > 10% compromete calidad en taza. Lote no recomendado para perfil de especialidad.',
+        },
+        suggestedActions: [
+          'Suspender recolección y re-clasificar cerezas manualmente',
+          'Separar verdes del lote principal',
+          'Reclasificar lote si verde supera 15%',
+        ],
+        parameters: {'green_threshold_pct': 10},
       ),
     ),
   ];

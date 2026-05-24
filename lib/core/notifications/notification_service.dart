@@ -176,6 +176,25 @@ class NotificationService {
     );
   }
 
+  // ── Harvest — scheduled reminder ──────────────────────────────────────────
+
+  /// Schedules the next harvest pass reminder based on variety/altitude interval.
+  /// Cancels any previous reminder for the same lot first.
+  Future<void> scheduleHarvestPassReminder({
+    required String lotId,
+    required int intervalDays,
+  }) async {
+    if (!_ready) return;
+    final id = 5000 + (lotId.hashCode.abs() % 999);
+    await _cancelById(id);
+    await _schedule(
+      id: id,
+      title: 'Recordatorio — Recolección',
+      body: 'Es hora del siguiente pase de recolección. Revisa la madurez antes de cosechar.',
+      scheduledAt: tz.TZDateTime.now(tz.local).add(Duration(days: intervalDays)),
+    );
+  }
+
   // ── Cancel ────────────────────────────────────────────────────────────────
 
   Future<void> cancelAllForLot(String lotId) async {
@@ -188,6 +207,7 @@ class NotificationService {
       2100 + (base % 99),
       3000 + (base % 999),
       4000 + (base % 999),
+      5000 + (base % 999),
     ]) {
       await _cancelById(id);
     }

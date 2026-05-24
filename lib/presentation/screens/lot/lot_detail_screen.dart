@@ -90,6 +90,15 @@ class _LotDetail extends StatelessWidget {
             AppRoutes.drying.replaceFirst(':id', lot.id),
           ),
         ),
+        const SizedBox(height: 10),
+        _ProcessButton(
+          icon: Icons.grass_outlined,
+          label: 'Iniciar / Ver recolección',
+          color: AppColors.roleFarmer,
+          onTap: () => context.go(
+            AppRoutes.harvest.replaceFirst(':id', lot.id),
+          ),
+        ),
       ],
     );
   }

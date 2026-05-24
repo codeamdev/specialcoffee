@@ -12,6 +12,7 @@ import 'package:special_coffee/presentation/screens/brewing/brew_screen.dart';
 import 'package:special_coffee/presentation/screens/dashboard/dashboard_screen.dart';
 import 'package:special_coffee/presentation/screens/drying/drying_screen.dart';
 import 'package:special_coffee/presentation/screens/fermentation/fermentation_screen.dart';
+import 'package:special_coffee/presentation/screens/harvest/harvest_screen.dart';
 import 'package:special_coffee/presentation/screens/lot/lot_create_screen.dart';
 import 'package:special_coffee/presentation/screens/lot/lot_detail_screen.dart';
 import 'package:special_coffee/presentation/screens/lot/lot_list_screen.dart';
@@ -90,6 +91,12 @@ GoRouter appRouter(Ref ref) {
                   GoRoute(
                     path: 'drying',
                     builder: (context, state) => DryingScreen(
+                      lotId: state.pathParameters['id']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'harvest',
+                    builder: (context, state) => HarvestScreen(
                       lotId: state.pathParameters['id']!,
                     ),
                   ),
