@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:special_coffee/ai_engine/models/ai_context.dart';
+import 'package:uuid/uuid.dart';
 import 'package:special_coffee/ai_engine/models/ai_rule.dart';
+import 'package:special_coffee/core/constants/app_constants.dart';
 import 'package:special_coffee/core/theme/app_colors.dart';
 import 'package:special_coffee/core/theme/app_text_styles.dart';
 import 'package:special_coffee/domain/entities/lot.dart';
@@ -41,7 +44,7 @@ class _LotCreateScreenState extends ConsumerState<LotCreateScreen> {
     _Variety(id: 'var_geisha',       name: 'Geisha',        sensitivity: 'very_high', scaPotential: 89.5),
     _Variety(id: 'var_pink_bourbon', name: 'Pink Bourbon',  sensitivity: 'very_high', scaPotential: 88.0),
     _Variety(id: 'var_typica',       name: 'Typica',        sensitivity: 'high',      scaPotential: 87.0),
-    _Variety(id: 'var_borbon',       name: 'Borbón',        sensitivity: 'high',      scaPotential: 86.0),
+    _Variety(id: 'var_bourbon',      name: 'Borbón',        sensitivity: 'high',      scaPotential: 86.0),
     _Variety(id: 'var_caturra',      name: 'Caturra',       sensitivity: 'high',      scaPotential: 85.5),
     _Variety(id: 'var_castillo',     name: 'Castillo',      sensitivity: 'medium',    scaPotential: 84.0),
     _Variety(id: 'var_colombia',     name: 'Colombia',      sensitivity: 'medium',    scaPotential: 83.0),
@@ -62,9 +65,10 @@ class _LotCreateScreenState extends ConsumerState<LotCreateScreen> {
   final _tempCtrl       = TextEditingController(text: '20.0');
   final _humidityCtrl   = TextEditingController(text: '75.0');
 
-  String _varietyId   = 'var_castillo';
-  double _rainPct     = 10.0;
-  String _processType = 'lavado';
+  String  _varietyId     = 'var_castillo';
+  double  _rainPct       = 10.0;
+  String  _processType   = 'lavado';
+  String? _createdLotId;
 
   @override
   void dispose() {
@@ -144,6 +148,7 @@ class _LotCreateScreenState extends ConsumerState<LotCreateScreen> {
                   ? _RecommendationsSection(
                       key: _recsKey,
                       recommendations: state.value!,
+                      lotId: _createdLotId,
                     )
                   : const SizedBox.shrink(),
             ),
@@ -361,8 +366,11 @@ class _LotCreateScreenState extends ConsumerState<LotCreateScreen> {
       orElse: () => UserRole.farmer,
     );
 
+    final lotId = const Uuid().v4();
+    setState(() => _createdLotId = lotId);
+
     final lot = Lot(
-      id:                  DateTime.now().millisecondsSinceEpoch.toString(),
+      id:                  lotId,
       userId:              userId,
       varietyId:           _varietyId,
       varietyName:         variety.name,
@@ -389,7 +397,7 @@ class _LotCreateScreenState extends ConsumerState<LotCreateScreen> {
       processType:         _processType,
       varietySensitivity:  variety.sensitivity,
       varietyScaPotential: variety.scaPotential,
-      userLotsCompleted:   8,
+      userLotsCompleted:   ref.read(userLotsProvider).asData?.value.length ?? 0,
     );
 
     await ref
@@ -478,9 +486,14 @@ class _FormSection extends StatelessWidget {
 // ── AI Recommendations section ─────────────────────────────────────────────
 
 class _RecommendationsSection extends StatelessWidget {
-  const _RecommendationsSection({super.key, required this.recommendations});
+  const _RecommendationsSection({
+    super.key,
+    required this.recommendations,
+    required this.lotId,
+  });
 
   final List<Recommendation> recommendations;
+  final String? lotId;
 
   @override
   Widget build(BuildContext context) {
@@ -529,6 +542,19 @@ class _RecommendationsSection extends StatelessWidget {
               isTopCard: entry.$1 == 0,
             ),
           ),
+          if (lotId != null) ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => context.go(
+                  AppRoutes.lotDetail.replaceFirst(':id', lotId!),
+                ),
+                icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                label: const Text('Ver detalle del lote'),
+              ),
+            ),
+          ],
         ],
       ),
     );

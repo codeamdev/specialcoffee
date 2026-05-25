@@ -1,3 +1,4 @@
+import 'package:special_coffee/ai_engine/constants/coffee_thresholds.dart';
 import 'package:special_coffee/ai_engine/models/ai_rule.dart';
 
 abstract final class HarvestRules {
@@ -11,7 +12,7 @@ abstract final class HarvestRules {
       logic: RuleLogic.and,
       tags: ['brix', 'harvest', 'critical'],
       conditions: [
-        RuleCondition(variable: 'brix_level', operator: ConditionOperator.lt, threshold: 15.0),
+        RuleCondition(variable: 'brix_level', operator: ConditionOperator.lt, threshold: CoffeeThresholds.brixCriticalMax),
       ],
       outcome: RuleOutcome(
         action: 'BLOCK_HARVEST',
@@ -40,7 +41,7 @@ abstract final class HarvestRules {
       logic: RuleLogic.and,
       tags: ['brix', 'harvest', 'warning'],
       conditions: [
-        RuleCondition(variable: 'brix_level', operator: ConditionOperator.between, threshold: 15.0, thresholdMax: 17.9),
+        RuleCondition(variable: 'brix_level', operator: ConditionOperator.between, threshold: CoffeeThresholds.brixLowMin, thresholdMax: CoffeeThresholds.brixLowMax),
       ],
       outcome: RuleOutcome(
         action: 'DELAY_HARVEST',
@@ -73,8 +74,8 @@ abstract final class HarvestRules {
       logic: RuleLogic.and,
       tags: ['brix', 'harvest', 'go'],
       conditions: [
-        RuleCondition(variable: 'brix_level', operator: ConditionOperator.between, threshold: 18.0, thresholdMax: 24.0),
-        RuleCondition(variable: 'cherry_color_pct', operator: ConditionOperator.gte, threshold: 75),
+        RuleCondition(variable: 'brix_level', operator: ConditionOperator.between, threshold: CoffeeThresholds.brixOptimalMin, thresholdMax: CoffeeThresholds.brixOptimalMax),
+        RuleCondition(variable: 'cherry_color_pct', operator: ConditionOperator.gte, threshold: CoffeeThresholds.cherryColorOptimalMin),
       ],
       outcome: RuleOutcome(
         action: 'HARVEST_NOW',
@@ -102,7 +103,7 @@ abstract final class HarvestRules {
       logic: RuleLogic.and,
       tags: ['brix', 'harvest', 'overripe'],
       conditions: [
-        RuleCondition(variable: 'brix_level', operator: ConditionOperator.gt, threshold: 24.0),
+        RuleCondition(variable: 'brix_level', operator: ConditionOperator.gt, threshold: CoffeeThresholds.brixOptimalMax),
       ],
       outcome: RuleOutcome(
         action: 'HARVEST_URGENT_OVERRIPE',
@@ -110,7 +111,7 @@ abstract final class HarvestRules {
         confidenceBase: 0.87,
         explanationByRole: {
           'farmer': '⚠️ Coseche hoy. Brix {brix_level}° indica sobre-madurez — las cerezas pueden fermentar en el árbol.',
-          'processor': '⚠️ Brix {brix_level}° supera el umbral de 24°. Sobre-madurez activa: cosechar de inmediato.',
+          'processor': '⚠️ Brix {brix_level}° supera 24°. Sobre-madurez activa: cosechar de inmediato.',
           'barista': '⚠️ Brix {brix_level}° — sobre-madurez. Riesgo de fermentación indeseada y defectos en taza.',
         },
         suggestedActions: [
@@ -131,8 +132,8 @@ abstract final class HarvestRules {
       logic: RuleLogic.and,
       tags: ['harvest', 'weather', 'urgent'],
       conditions: [
-        RuleCondition(variable: 'brix_level', operator: ConditionOperator.between, threshold: 18.0, thresholdMax: 24.0),
-        RuleCondition(variable: 'rain_probability_pct', operator: ConditionOperator.gte, threshold: 70.0),
+        RuleCondition(variable: 'brix_level', operator: ConditionOperator.between, threshold: CoffeeThresholds.brixOptimalMin, thresholdMax: CoffeeThresholds.brixOptimalMax),
+        RuleCondition(variable: 'rain_probability_pct', operator: ConditionOperator.gte, threshold: CoffeeThresholds.rainUrgencyPct),
       ],
       outcome: RuleOutcome(
         action: 'HARVEST_URGENT',
@@ -152,7 +153,6 @@ abstract final class HarvestRules {
     ),
 
     // ── EXCESO DE VERDE — advertencia ────────────────────────────────────────
-    // cherry_color_pct < 95 → verde > 5 %
     const AIRule(
       id: 'HARV-GREEN-WARN-001',
       module: 'harvest',
@@ -161,7 +161,7 @@ abstract final class HarvestRules {
       logic: RuleLogic.and,
       tags: ['ripeness', 'harvest', 'warning'],
       conditions: [
-        RuleCondition(variable: 'cherry_color_pct', operator: ConditionOperator.between, threshold: 90.0, thresholdMax: 94.9),
+        RuleCondition(variable: 'cherry_color_pct', operator: ConditionOperator.between, threshold: CoffeeThresholds.cherryColorGreenWarnMin, thresholdMax: CoffeeThresholds.cherryColorGreenWarnMax),
       ],
       outcome: RuleOutcome(
         action: 'REDUCE_GREEN_HARVEST',
@@ -181,7 +181,6 @@ abstract final class HarvestRules {
     ),
 
     // ── EXCESO DE VERDE — alta ────────────────────────────────────────────────
-    // cherry_color_pct < 90 → verde > 10 %
     const AIRule(
       id: 'HARV-GREEN-HIGH-001',
       module: 'harvest',
@@ -190,7 +189,7 @@ abstract final class HarvestRules {
       logic: RuleLogic.and,
       tags: ['ripeness', 'harvest', 'high'],
       conditions: [
-        RuleCondition(variable: 'cherry_color_pct', operator: ConditionOperator.lt, threshold: 90.0),
+        RuleCondition(variable: 'cherry_color_pct', operator: ConditionOperator.lt, threshold: CoffeeThresholds.cherryColorGreenCriticalMax),
       ],
       outcome: RuleOutcome(
         action: 'STOP_GREEN_HARVEST',

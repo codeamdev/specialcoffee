@@ -176,8 +176,8 @@ class _LotCard extends StatelessWidget {
   (String, IconData) _processInfo(String process) => switch (process) {
     'lavado'    => ('Lavado',    Icons.water_drop_outlined),
     'natural'   => ('Natural',   Icons.wb_sunny_outlined),
-    'honey'     => ('Honey',     Icons.hexagon_outlined),
-    'anaerobio' => ('Anaerobio', Icons.science_outlined),
+    'honey_yellow'     => ('Honey',     Icons.hexagon_outlined),
+    'anaerobic_lactic' => ('Anaerobio', Icons.science_outlined),
     _           => (process,     Icons.filter_outlined),
   };
 

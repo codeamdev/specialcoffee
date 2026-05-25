@@ -25,6 +25,21 @@ class PostgRESTLotRepository implements LotRepository {
   }
 
   @override
+  Future<Lot?> getLotById(String lotId, String userId) async {
+    final response = await _client.get<List<dynamic>>(
+      ApiConfig.lots,
+      params: {
+        'id':       'eq.$lotId',
+        'owner_id': 'eq.$userId',
+        'select':   '*',
+        'limit':    '1',
+      },
+    );
+    final data = (response.data ?? []).cast<Map<String, dynamic>>();
+    return data.isEmpty ? null : _fromRow(data.first);
+  }
+
+  @override
   Future<Lot> saveLot(Lot lot) async {
     await _client.post<dynamic>(ApiConfig.lots, data: _toPayload(lot));
     return lot;

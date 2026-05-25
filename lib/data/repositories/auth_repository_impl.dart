@@ -8,6 +8,22 @@ class HttpAuthRepository implements AuthRepository {
 
   HttpAuthRepository(this._client);
 
+  // ── Dev bypass ─────────────────────────────────────────────────────────────
+
+  static AuthResult _devUser(String email) => AuthResult(
+        accessToken: 'dev_token',
+        refreshToken: 'dev_refresh',
+        user: AuthUser(
+          userId: 'dev-user-001',
+          email: email,
+          displayName: 'Dev User',
+          role: 'farmer',
+          region: 'Huila',
+          country: 'CO',
+          language: 'es',
+        ),
+      );
+
   @override
   Future<AuthResult> register({
     required String email,
@@ -18,6 +34,8 @@ class HttpAuthRepository implements AuthRepository {
     String country  = 'CO',
     String language = 'es',
   }) async {
+    if (ApiConfig.devBypass) return _devUser(email);
+
     final response = await _client.post(ApiConfig.register, data: {
       'email':        email,
       'password':     password,
@@ -36,6 +54,8 @@ class HttpAuthRepository implements AuthRepository {
     required String email,
     required String password,
   }) async {
+    if (ApiConfig.devBypass) return _devUser(email);
+
     final response = await _client.post(ApiConfig.login, data: {
       'email':    email,
       'password': password,
@@ -58,6 +78,11 @@ class HttpAuthRepository implements AuthRepository {
 
   @override
   Future<AuthUser?> currentUser() async {
+    if (ApiConfig.devBypass) {
+      // En modo dev siempre hay un usuario activo (simula sesión persistida)
+      return _devUser('dev@specialcoffee.app').user;
+    }
+
     final token = await _client.getAccessToken();
     if (token == null) return null;
 

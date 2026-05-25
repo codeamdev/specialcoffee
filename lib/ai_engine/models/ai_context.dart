@@ -40,6 +40,18 @@ abstract class AIContext with _$AIContext {
     @Default(0.0) double brixLevel,
     @Default(0) int cherryColorPct,
 
+    // ── CLASIFICACIÓN ─────────────────────────────────────────────
+    // flotationFloatPct: % kg flotantes / kg entrada (para CLAS-FLOAT-* rules)
+    // pctAprovechamiento: % kg_seleccionado / kg_entrada (para CLAS-APROVECH-* rules)
+    // DISTINTO del rendimiento de trilla (Ítem #9).
+    @Default(0.0) double flotationFloatPct,
+    @Default(0.0) double pctAprovechamiento,
+
+    // ── DESPULPADO ────────────────────────────────────────────────
+    // Horas desde el punto de referencia (clasificación → último pase → 0 si ninguno).
+    // 0.0 significa "sin referencia" — las reglas DEPU-RETRASO-* no disparan.
+    @Default(0.0) double hoursSinceClassification,
+
     // ── PREPARACIÓN ───────────────────────────────────────────────
     String? brewMethod,               // 'v60'|'espresso'|'chemex'|'aeropress'|'french_press'
     @Default('') String roastLevel,   // 'light'|'medium'|'dark'
@@ -64,6 +76,10 @@ abstract class AIContext with _$AIContext {
     @Default(0.0) double userAvgSca,
     @Default(0.0) double userAvgFermentationH,
     @Default(0) int userLotsCompleted,
+
+    // ── CATACIÓN ──────────────────────────────────────────────────
+    @Default(0.0) double scaTotalScore,
+    @Default(0.0) double userSpecialtyRatePct,
   }) = _AIContext;
 
   factory AIContext.fromJson(Map<String, dynamic> json) =>

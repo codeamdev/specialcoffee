@@ -2,6 +2,9 @@ class ApiConfig {
   // ── Cambiar a false para producción ──────────────────────────────────────
   static const bool _local = true;
 
+  // ── Dev bypass: poner en true si el backend no está corriendo ────────────
+  static const bool devBypass = false;
+
   // En local: dos puertos distintos (sin Nginx)
   // En prod:  un solo dominio con Nginx como proxy
   static const String _authBase = _local

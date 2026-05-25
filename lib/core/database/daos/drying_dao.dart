@@ -8,6 +8,13 @@ part 'drying_dao.g.dart';
 class DryingDao extends DatabaseAccessor<AppDatabase> with _$DryingDaoMixin {
   DryingDao(super.db);
 
+  Future<DbDryingSession?> getLatestSession(String lotId) =>
+      (select(dryingSessions)
+            ..where((t) => t.lotId.equals(lotId) & t.deletedAt.isNull())
+            ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+            ..limit(1))
+          .getSingleOrNull();
+
   Future<DbDryingSession?> getActiveSession(String lotId) =>
       (select(dryingSessions)
             ..where(

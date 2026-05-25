@@ -9,6 +9,13 @@ class FermentationDao extends DatabaseAccessor<AppDatabase>
     with _$FermentationDaoMixin {
   FermentationDao(super.db);
 
+  Future<DbFermentationSession?> getLatestSession(String lotId) =>
+      (select(fermentationSessions)
+            ..where((t) => t.lotId.equals(lotId) & t.deletedAt.isNull())
+            ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+            ..limit(1))
+          .getSingleOrNull();
+
   Future<DbFermentationSession?> getActiveSession(String lotId) =>
       (select(fermentationSessions)
             ..where(

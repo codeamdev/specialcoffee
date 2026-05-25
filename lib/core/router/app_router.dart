@@ -12,6 +12,9 @@ import 'package:special_coffee/presentation/screens/brewing/brew_screen.dart';
 import 'package:special_coffee/presentation/screens/dashboard/dashboard_screen.dart';
 import 'package:special_coffee/presentation/screens/drying/drying_screen.dart';
 import 'package:special_coffee/presentation/screens/fermentation/fermentation_screen.dart';
+import 'package:special_coffee/presentation/screens/classification/classification_screen.dart';
+import 'package:special_coffee/presentation/screens/cupping/cupping_screen.dart';
+import 'package:special_coffee/presentation/screens/depulping/depulping_screen.dart';
 import 'package:special_coffee/presentation/screens/harvest/harvest_screen.dart';
 import 'package:special_coffee/presentation/screens/lot/lot_create_screen.dart';
 import 'package:special_coffee/presentation/screens/lot/lot_detail_screen.dart';
@@ -97,6 +100,24 @@ GoRouter appRouter(Ref ref) {
                   GoRoute(
                     path: 'harvest',
                     builder: (context, state) => HarvestScreen(
+                      lotId: state.pathParameters['id']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'classification',
+                    builder: (context, state) => ClassificationScreen(
+                      lotId: state.pathParameters['id']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'depulping',
+                    builder: (context, state) => DepulpingScreen(
+                      lotId: state.pathParameters['id']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'cupping',
+                    builder: (context, state) => CuppingScreen(
                       lotId: state.pathParameters['id']!,
                     ),
                   ),

@@ -3,9 +3,15 @@ import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:special_coffee/core/database/daos/classification_dao.dart';
+import 'package:special_coffee/core/database/daos/cupping_dao.dart';
+import 'package:special_coffee/core/database/daos/depulping_dao.dart';
 import 'package:special_coffee/core/database/daos/drying_dao.dart';
 import 'package:special_coffee/core/database/daos/fermentation_dao.dart';
 import 'package:special_coffee/core/database/daos/harvest_dao.dart';
+import 'package:special_coffee/core/database/tables/classification_tables.dart';
+import 'package:special_coffee/core/database/tables/cupping_tables.dart';
+import 'package:special_coffee/core/database/tables/depulping_tables.dart';
 import 'package:special_coffee/core/database/tables/drying_tables.dart';
 import 'package:special_coffee/core/database/tables/fermentation_tables.dart';
 import 'package:special_coffee/core/database/tables/harvest_tables.dart';
@@ -22,14 +28,17 @@ part 'app_database.g.dart';
     DryingReadings,
     HarvestSessions,
     HarvestPasses,
+    ClassificationSessions,
+    DepulpingSessions,
+    CuppingSessions,
   ],
-  daos: [FermentationDao, DryingDao, HarvestDao],
+  daos: [FermentationDao, DryingDao, HarvestDao, ClassificationDao, DepulpingDao, CuppingDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -38,6 +47,15 @@ class AppDatabase extends _$AppDatabase {
           if (from < 2) {
             await m.createTable(harvestSessions);
             await m.createTable(harvestPasses);
+          }
+          if (from < 3) {
+            await m.createTable(classificationSessions);
+          }
+          if (from < 4) {
+            await m.createTable(depulpingSessions);
+          }
+          if (from < 5) {
+            await m.createTable(cuppingSessions);
           }
         },
       );

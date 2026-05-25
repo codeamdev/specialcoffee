@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:special_coffee/core/constants/app_constants.dart';
 import 'package:special_coffee/core/theme/app_colors.dart';
 import 'package:special_coffee/core/theme/app_text_styles.dart';
 import 'package:special_coffee/domain/entities/lot.dart';
 import 'package:special_coffee/presentation/providers/lot_provider.dart';
+import 'package:special_coffee/presentation/providers/lot_steps_provider.dart';
 
 class LotDetailScreen extends ConsumerWidget {
   const LotDetailScreen({super.key, required this.lotId});
@@ -71,34 +71,9 @@ class _LotDetail extends StatelessWidget {
           _NotesCard(lot.notes!),
           const SizedBox(height: 20),
         ],
-        _SectionTitle('Procesos'),
-        const SizedBox(height: 12),
-        _ProcessButton(
-          icon: Icons.science_outlined,
-          label: 'Iniciar / Ver fermentación',
-          color: AppColors.aiBlue,
-          onTap: () => context.go(
-            AppRoutes.fermentation.replaceFirst(':id', lot.id),
-          ),
-        ),
-        const SizedBox(height: 10),
-        _ProcessButton(
-          icon: Icons.wb_sunny_outlined,
-          label: 'Iniciar / Ver secado',
-          color: AppColors.caramel,
-          onTap: () => context.go(
-            AppRoutes.drying.replaceFirst(':id', lot.id),
-          ),
-        ),
-        const SizedBox(height: 10),
-        _ProcessButton(
-          icon: Icons.grass_outlined,
-          label: 'Iniciar / Ver recolección',
-          color: AppColors.roleFarmer,
-          onTap: () => context.go(
-            AppRoutes.harvest.replaceFirst(':id', lot.id),
-          ),
-        ),
+        _SectionTitle('Etapas del proceso'),
+        const SizedBox(height: 16),
+        _LotStepper(lotId: lot.id),
       ],
     );
   }
@@ -173,8 +148,8 @@ class _HeaderCard extends StatelessWidget {
   (String, IconData) _processInfo(String process) => switch (process) {
     'lavado'    => ('Lavado',    Icons.water_drop_outlined),
     'natural'   => ('Natural',   Icons.wb_sunny_outlined),
-    'honey'     => ('Honey',     Icons.hexagon_outlined),
-    'anaerobio' => ('Anaerobio', Icons.science_outlined),
+    'honey_yellow'     => ('Honey',     Icons.hexagon_outlined),
+    'anaerobic_lactic' => ('Anaerobio', Icons.science_outlined),
     _           => (process,     Icons.filter_outlined),
   };
 
@@ -278,32 +253,204 @@ class _NotesCard extends StatelessWidget {
   }
 }
 
-class _ProcessButton extends StatelessWidget {
-  const _ProcessButton({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
+// ── Stepper ────────────────────────────────────────────────────────────────
 
-  final IconData     icon;
-  final String       label;
-  final Color        color;
-  final VoidCallback onTap;
+class _LotStepper extends ConsumerWidget {
+  const _LotStepper({required this.lotId});
+
+  final String lotId;
 
   @override
-  Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon, color: color),
-      label: Text(label, style: AppTextStyles.buttonMedium.copyWith(color: color)),
-      style: OutlinedButton.styleFrom(
-        alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        side: BorderSide(color: color.withValues(alpha: 0.4)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final stepsAsync = ref.watch(lotStepsProvider(lotId));
+    return stepsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (state) => Column(
+        children: [
+          for (int i = 0; i < state.steps.length; i++)
+            _StepTile(
+              step:   state.steps[i],
+              isLast: i == state.steps.length - 1,
+            ),
+        ],
       ),
     );
   }
+}
+
+class _StepTile extends StatelessWidget {
+  const _StepTile({required this.step, required this.isLast});
+
+  final LotStep step;
+  final bool    isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    final isNext = step.status == StepStatus.next;
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Timeline column
+          SizedBox(
+            width: 36,
+            child: Column(
+              children: [
+                _StepCircle(status: step.status),
+                if (!isLast)
+                  Expanded(
+                    child: Center(
+                      child: Container(
+                        width: 2,
+                        color: step.status == StepStatus.done
+                            ? AppColors.success.withValues(alpha: 0.5)
+                            : AppColors.outlineVariant,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Step card
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
+              child: InkWell(
+                onTap: () => context.go(step.route),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isNext
+                        ? AppColors.aiBlue.withValues(alpha: 0.05)
+                        : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isNext
+                          ? AppColors.aiBlue.withValues(alpha: 0.35)
+                          : AppColors.outlineVariant,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(step.label,
+                                    style: AppTextStyles.labelMedium.copyWith(
+                                      color: step.status == StepStatus.pending
+                                          ? AppColors.onSurfaceVariant
+                                          : AppColors.onSurface,
+                                    )),
+                                if (isNext) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 7, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.aiBlue,
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      'Siguiente',
+                                      style: AppTextStyles.labelSmall.copyWith(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              _subtitle(),
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        size: 20,
+                        color: step.status == StepStatus.pending
+                            ? AppColors.outlineVariant
+                            : AppColors.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _subtitle() => switch (step.status) {
+    StepStatus.done    => 'Completado',
+    StepStatus.active  => 'En progreso',
+    StepStatus.next    => 'Acción recomendada',
+    StepStatus.pending => 'Pendiente',
+  };
+}
+
+class _StepCircle extends StatelessWidget {
+  const _StepCircle({required this.status});
+
+  final StepStatus status;
+
+  @override
+  Widget build(BuildContext context) => switch (status) {
+    StepStatus.done => Container(
+      width: 28, height: 28,
+      decoration: const BoxDecoration(
+        color: AppColors.success, shape: BoxShape.circle,
+      ),
+      child: const Icon(Icons.check_rounded, size: 16, color: Colors.white),
+    ),
+    StepStatus.active => Container(
+      width: 28, height: 28,
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.12),
+        shape: BoxShape.circle,
+        border: Border.all(color: AppColors.warning, width: 2),
+      ),
+      child: Center(
+        child: Container(
+          width: 10, height: 10,
+          decoration: const BoxDecoration(
+            color: AppColors.warning, shape: BoxShape.circle,
+          ),
+        ),
+      ),
+    ),
+    StepStatus.next => Container(
+      width: 28, height: 28,
+      decoration: BoxDecoration(
+        color: AppColors.aiBlue.withValues(alpha: 0.1),
+        shape: BoxShape.circle,
+        border: Border.all(color: AppColors.aiBlue, width: 2),
+      ),
+      child: const Icon(Icons.arrow_forward_rounded,
+          size: 14, color: AppColors.aiBlue),
+    ),
+    StepStatus.pending => Container(
+      width: 28, height: 28,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(color: AppColors.outlineVariant, width: 2),
+      ),
+    ),
+  };
 }
 

@@ -13,6 +13,9 @@ class ConditionEvaluator {
     'uv_index':                    (c) => c.uvIndex,
     'brix_level':                  (c) => c.brixLevel,
     'cherry_color_pct':            (c) => c.cherryColorPct.toDouble(),
+    'flotation_float_pct':         (c) => c.flotationFloatPct,
+    'pct_aprovechamiento':         (c) => c.pctAprovechamiento,
+    'hours_since_classification':  (c) => c.hoursSinceClassification,
     'fermentation_hours_elapsed':  (c) => c.fermentationHoursElapsed,
     'current_ph':                  (c) => c.currentPh,
     'mucilago_temp_c':             (c) => c.mucilagoTempC,
@@ -31,6 +34,8 @@ class ConditionEvaluator {
     'user_avg_sca':                (c) => c.userAvgSca,
     'user_avg_fermentation_h':     (c) => c.userAvgFermentationH,
     'user_lots_completed':         (c) => c.userLotsCompleted.toDouble(),
+    'sca_total_score':             (c) => c.scaTotalScore,
+    'user_specialty_rate_pct':     (c) => c.userSpecialtyRatePct,
   };
 
   // ── Campos de texto del AIContext ────────────────────────────────────────────

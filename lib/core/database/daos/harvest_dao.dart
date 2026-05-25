@@ -18,6 +18,15 @@ class HarvestDao extends DatabaseAccessor<AppDatabase> with _$HarvestDaoMixin {
             ))
           .getSingleOrNull();
 
+  /// Returns the most recent session (active or completed) for the cascade
+  /// fallback in the depulping reference time calculation.
+  Future<DbHarvestSession?> getLatestSession(String lotId) =>
+      (select(harvestSessions)
+            ..where((t) => t.lotId.equals(lotId) & t.deletedAt.isNull())
+            ..orderBy([(t) => OrderingTerm.desc(t.startedAt)])
+            ..limit(1))
+          .getSingleOrNull();
+
   Future<DbHarvestSession?> getSessionById(String id) =>
       (select(harvestSessions)..where((t) => t.id.equals(id)))
           .getSingleOrNull();
