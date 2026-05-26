@@ -6,12 +6,14 @@ import 'package:special_coffee/data/repositories/depulping_repository_local.dart
 import 'package:special_coffee/data/repositories/drying_repository_local.dart';
 import 'package:special_coffee/data/repositories/fermentation_repository_local.dart';
 import 'package:special_coffee/data/repositories/harvest_repository_local.dart';
+import 'package:special_coffee/data/repositories/lot_repository_local.dart';
 import 'package:special_coffee/domain/repositories/classification_repository.dart';
 import 'package:special_coffee/domain/repositories/cupping_repository.dart';
 import 'package:special_coffee/domain/repositories/depulping_repository.dart';
 import 'package:special_coffee/domain/repositories/drying_repository.dart';
 import 'package:special_coffee/domain/repositories/fermentation_repository.dart';
 import 'package:special_coffee/domain/repositories/harvest_repository.dart';
+import 'package:special_coffee/domain/repositories/lot_repository.dart';
 import 'package:special_coffee/presentation/providers/auth_provider.dart';
 
 part 'providers.g.dart';
@@ -63,4 +65,10 @@ CuppingRepository cuppingLocalRepo(Ref ref) {
   final db = ref.watch(appDatabaseProvider);
   final userId = ref.watch(currentUserIdProvider);
   return CuppingLocalRepository(db.cuppingDao, userId);
+}
+
+@Riverpod(keepAlive: true)
+LotRepository lotLocalRepo(Ref ref) {
+  final db = ref.watch(appDatabaseProvider);
+  return LotLocalRepository(db.lotDao);
 }

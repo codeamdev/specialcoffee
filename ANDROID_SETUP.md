@@ -42,11 +42,12 @@
 
 ## 5. Tests de runtime — flujo completo (D-1)
 
-### 5a. Instalación limpia (onCreate path — Drift v5 fresh)
+### 5a. Instalación limpia (onCreate path — Drift v6 fresh)
 - [ ] Desinstalar la app si existe, instalar de nuevo
 - [ ] Abrir la app — sin crash en inicialización
-- [ ] Verificar que el schema v5 se crea correctamente (10 tablas)
+- [ ] Verificar que el schema v6 se crea correctamente (11 tablas, incluye `local_lots`)
 - [ ] Navegar a Lots — lista vacía sin error
+- [ ] Crear un lote — debe persistir localmente y aparecer en la lista
 
 ### 5b. Flujo no-natural completo (6 pasos)
 - [ ] Crear un lote con proceso "Lavado"
@@ -78,15 +79,16 @@
 
 ## 6. Test de migración encadenada (D-4 — mitigado, pendiente verificación)
 
-> D-4: Las migraciones v1→v5 son aditivas (solo CREATE TABLE). El onUpgrade
+> D-4: Las migraciones v1→v6 son aditivas (solo CREATE TABLE). El onUpgrade
 > encadenado aún no ha sido ejecutado en dispositivo real con base pre-existente.
 
 - [ ] Obtener o compilar el APK del estado Sprint 1 (schemaVersion=1 — commits anteriores a b3c1633)
 - [ ] Instalar Sprint 1 APK en emulador
 - [ ] Crear datos: un lote con sesión de fermentación
-- [ ] Instalar el APK actual (schemaVersion=5) sobre el anterior — sin desinstalar
+- [ ] Instalar el APK actual (schemaVersion=6) sobre el anterior — sin desinstalar
 - [ ] Verificar que el lote y la sesión de fermentación del Sprint 1 siguen intactos
 - [ ] Verificar que los pasos nuevos del stepper (clasificación, despulpado, catación) aparecen como "next/pending" (sin datos)
+- [ ] Verificar que la tabla `local_lots` se crea vacía (migración v6)
 - [ ] Si cualquier migración falla: revisar el bloque onUpgrade en `app_database.dart`
 
 ## 7. Bugs encontrados en testing Windows (actualizar aquí)
@@ -94,12 +96,16 @@
 > Esta sección se llena durante el Camino B (Windows desktop).
 > Cada bug encontrado en Windows es candidato a reproducirse en Android también.
 
-### GAP-01 — LotRepository es 100% PostgREST: sin backend, el flujo completo es inalcanzable
-- **Impacto**: bloquea D-1 completo. No se puede llegar a la pantalla de detalle de un lote sin PostgREST corriendo — `getLots()` y `getLotById()` son PostgREST-only
-- **Raíz**: `PostgRESTLotRepository` es la única implementación. La tabla `Lots` existe en Drift desde v1 pero nunca se escribe ni se lee localmente
-- **Consecuencia**: los módulos offline-first (harvest, fermentation, drying, classification, depulping, cupping) no pueden probarse en aislamiento porque el flujo requiere pasar por un lote
-- **Fix requerido**: añadir persistencia local de lotes en Drift como prerrequisito de D-1. Puede ir como sub-tarea de Item #14 (sync) o como mini-tarea independiente "lot local write path"
-- **Workaround de testing**: correr PostgREST localmente (requiere PostgreSQL) o insertar un lote directamente en SQLite via SQLite Browser para simular datos locales
+### GAP-01 — LotRepository era 100% PostgREST: sin backend, el flujo completo era inalcanzable ✅ CERRADO
+- **Impacto original**: bloqueaba D-1 completo. No se podía llegar a la pantalla de detalle de un lote sin PostgREST corriendo — `getLots()` y `getLotById()` eran PostgREST-only
+- **Raíz**: `PostgRESTLotRepository` era la única implementación. La tabla `Lots` existía en Drift desde v1 pero nunca se escribía ni leía localmente
+- **Fix aplicado (schemaVersion 6)**:
+  1. Nueva tabla `local_lots` (14 campos, soft-delete vía `deleted_at`) — CREATE TABLE aditivo, D-4 no se reabre
+  2. `LotDao` + `LotLocalRepository` — implementan `LotRepository` sobre Drift
+  3. `lotRepositoryProvider`: switch `ApiConfig.devBypass` → `LotLocalRepository` (local) o `PostgRESTLotRepository` (prod)
+  4. Con `devBypass = true` el modo es **100% local** — PostgREST no se ejerce en ningún módulo hasta el ítem #14
+- **Deuda generada**: D-12 — dos tablas para Lot (`local_lots` + `lots`) que el ítem #14 debe reconciliar
+- **Estado**: devBypass cubre el flujo completo sin red. D-1 desbloqueado.
 
 ### BUG-01 — Hard crash cuando AuthNotifier.login() recibe error de red/400 ✅ CERRADO
 - **Reproducir**: `devBypass = false`, lanzar app, intentar login con backend caído o con credenciales inválidas
@@ -126,5 +132,6 @@
 | ID  | Estado  | Descripción |
 |-----|---------|-------------|
 | D-1 | 🔴 abierta | Verificación en dispositivo Android — este documento completo |
-| D-4 | 🟡 mitigado | Migración v1→v5 en dispositivo con base existente — ver sección 6 |
+| D-4 | 🟡 mitigado | Migración v1→v6 en dispositivo con base existente — ver sección 6 |
 | D-11 | ⚪ pendiente | Decidir applicationId definitivo antes de Play Store |
+| D-12 | ⚪ pendiente | Reconciliar modelo de dos tablas para Lot (`local_lots` vs `lots`) en ítem #14 — definir fuente de verdad y mecanismo de sync |

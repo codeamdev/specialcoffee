@@ -1,6 +1,8 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:special_coffee/ai_engine/models/ai_context.dart';
 import 'package:special_coffee/ai_engine/models/ai_rule.dart';
+import 'package:special_coffee/core/config/api_config.dart';
+import 'package:special_coffee/core/di/providers.dart';
 import 'package:special_coffee/data/repositories/lot_repository_impl.dart';
 import 'package:special_coffee/domain/entities/lot.dart';
 import 'package:special_coffee/domain/repositories/lot_repository.dart';
@@ -10,8 +12,9 @@ import 'package:special_coffee/presentation/providers/auth_provider.dart';
 part 'lot_provider.g.dart';
 
 @Riverpod(keepAlive: true)
-LotRepository lotRepository(Ref ref) =>
-    PostgRESTLotRepository(ref.read(apiClientProvider));
+LotRepository lotRepository(Ref ref) => ApiConfig.devBypass
+    ? ref.watch(lotLocalRepoProvider)
+    : PostgRESTLotRepository(ref.read(apiClientProvider));
 
 // ── List providers ─────────────────────────────────────────────────────────
 
