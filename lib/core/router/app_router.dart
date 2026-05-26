@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:special_coffee/core/constants/app_constants.dart';
@@ -25,15 +24,27 @@ import 'package:special_coffee/presentation/providers/auth_provider.dart';
 
 part 'app_router.g.dart';
 
-@riverpod
+// Bridges Riverpod auth state to GoRouter's refreshListenable.
+// Avoids recreating the GoRouter on every auth state change — without this,
+// a rapid AsyncLoading→AsyncData transition disposes userLotsProvider mid-flight
+// and the unhandled DioException escapes the zone, killing the process.
+class _RouterNotifier extends ChangeNotifier {
+  _RouterNotifier(Ref ref) {
+    ref.listen(authProvider, (_, __) => notifyListeners());
+    ref.onDispose(dispose);
+  }
+}
+
+@Riverpod(keepAlive: true)
 GoRouter appRouter(Ref ref) {
-  final authState = ref.watch(authProvider);
+  final notifier = _RouterNotifier(ref);
 
   return GoRouter(
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: false,
+    refreshListenable: notifier,
     redirect: (context, state) {
-      final isAuthenticated = authState.value != null;
+      final isAuthenticated = ref.read(authProvider).value != null;
       final isSplash = state.matchedLocation == AppRoutes.splash;
       final isAuthRoute = state.matchedLocation == AppRoutes.login ||
           state.matchedLocation == AppRoutes.onboarding;
