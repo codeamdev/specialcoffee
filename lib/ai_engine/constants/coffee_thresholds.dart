@@ -14,7 +14,11 @@ abstract final class CoffeeThresholds {
   // > brixOptimalMax → sobremadurez urgente
 
   // ── Madurez visual de cereza (cherry_color_pct = % cerezas rojas/amarillas) ──
-  static const double cherryColorOptimalMin       = 75.0;  // ≥75% + brix ok → cosechar
+  // D-3 / Estándar FNC: "falto" máx. 2-5 % → cosechar solo con ≥95 % maduras.
+  // cherryColorOptimalMin era 75 — corregido (E-2): 75 % maduro = 25 % verde,
+  // incompatible con el estándar de especialidad y causaba HARVEST_NOW simultáneo
+  // con STOP_GREEN_HARVEST cuando el verde era 5-25 %.
+  static const double cherryColorOptimalMin       = 95.0;  // ≥95% maduras → ≤5% verde → cosechar
   static const double cherryColorGreenWarnMin     = 90.0;  // 90–94.9% → verde 5–10%
   static const double cherryColorGreenWarnMax     = 94.9;
   static const double cherryColorGreenCriticalMax = 90.0;  // < 90%   → verde >10%

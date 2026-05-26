@@ -17,5 +17,7 @@ abstract class BrewRecipe with _$BrewRecipe {
     required double yieldTargetMin,
     required double yieldTargetMax,
     @Default([]) List<String> adjustmentsApplied,
+    // Cold brew only: maceración en frío (horas). 0 = método caliente.
+    @Default(0) int steepHours,
   }) = _BrewRecipe;
 }

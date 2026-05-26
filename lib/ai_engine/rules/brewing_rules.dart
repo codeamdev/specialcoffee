@@ -77,6 +77,37 @@ abstract final class BrewingRules {
     ),
 
     AIRule(
+      id: 'BREW-COLDBREW-STEEP-001',
+      module: 'brewing',
+      name: 'Control de tiempo de maceración Cold Brew',
+      priority: 2,
+      logic: RuleLogic.and,
+      tags: ['cold_brew', 'steep_time', 'recipe'],
+      conditions: [
+        RuleCondition(variable: 'brew_method', operator: ConditionOperator.eq, threshold: 'cold_brew'),
+      ],
+      outcome: RuleOutcome(
+        action: 'GUIDE_COLDBREW_STEEP',
+        alertLevel: AlertLevel.info,
+        confidenceBase: 0.92,
+        explanationByRole: {
+          'farmer': 'Cold Brew necesita entre 12 y 24 horas en nevera para sacar lo mejor del café.',
+          'processor': 'Maceración en frío: 16h óptimo (rango 12–24h), temperatura 4°C. TDS objetivo concentrado: 2.5–3.5%. Diluir 1:1 para servir.',
+          'barista': 'Cold Brew concentrado (1:8): macerar 16h a 4°C (rango 12–24h). TDS concentrado 2.5–3.5%. No calentar — extracción lenta elimina acidez y amargor.',
+        },
+        parameters: {
+          'steep_hours_optimal': 16,
+          'steep_hours_min': 12,
+          'steep_hours_max': 24,
+          'temp_c': 4,
+          'tds_min_pct': 2.5,
+          'tds_max_pct': 3.5,
+          'dilution_ratio': 1.0,
+        },
+      ),
+    ),
+
+    AIRule(
       id: 'BREW-ESPRESSO-LIGHT-ROAST-001',
       module: 'brewing',
       name: 'Temperatura alta para espresso con tueste claro',

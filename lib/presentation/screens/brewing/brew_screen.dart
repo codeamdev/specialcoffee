@@ -35,12 +35,13 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
   // ── Static data ───────────────────────────────────────────────────────────
 
   static const _methods = [
-    _Method('v60',          'V60',          'Limpio y delicado',   '1 : 15.5', Icons.filter_alt_outlined),
-    _Method('chemex',       'Chemex',       'Sedoso y suave',      '1 : 16.5', Icons.science_outlined),
-    _Method('aeropress',    'Aeropress',    'Versátil y con cuerpo', '1 : 13', Icons.compress),
-    _Method('french_press', 'French Press', 'Denso y con textura', '1 : 15',   Icons.free_breakfast_outlined),
-    _Method('espresso',     'Espresso',     'Concentrado e intenso', '1 : 2',  Icons.local_cafe_outlined),
-    _Method('moka',         'Moka',         'Fuerte y aromático',  '1 : 7.5',  Icons.whatshot_outlined),
+    _Method('v60',          'V60',          'Limpio y delicado',     '1 : 15.5', Icons.filter_alt_outlined),
+    _Method('chemex',       'Chemex',       'Sedoso y suave',        '1 : 16.5', Icons.science_outlined),
+    _Method('aeropress',    'Aeropress',    'Versátil y con cuerpo', '1 : 13',   Icons.compress),
+    _Method('french_press', 'French Press', 'Denso y con textura',   '1 : 15',   Icons.free_breakfast_outlined),
+    _Method('espresso',     'Espresso',     'Concentrado e intenso', '1 : 2',    Icons.local_cafe_outlined),
+    _Method('moka',         'Moka',         'Fuerte y aromático',    '1 : 7.5',  Icons.whatshot_outlined),
+    _Method('cold_brew',    'Cold Brew',    'Frío e intenso',        '1 : 8',    Icons.ac_unit_outlined),
   ];
 
   static const _roastLevels = [
@@ -751,9 +752,10 @@ class _RecipeCardState extends State<_RecipeCard> {
 
   @override
   Widget build(BuildContext context) {
-    final r        = widget.recipe;
-    final hasBloom = r.bloomSeconds > 0;
-    final hasMoka  = r.waterTempC == 0;
+    final r           = widget.recipe;
+    final isColdBrew  = r.method == 'cold_brew';
+    final hasBloom    = r.bloomSeconds > 0;
+    final hasMoka     = r.waterTempC == 0 && !isColdBrew;
 
     return Padding(
       padding: const EdgeInsets.only(top: 22),
@@ -803,17 +805,27 @@ class _RecipeCardState extends State<_RecipeCard> {
             Row(children: [
               _Param(
                 'Temperatura',
-                hasMoka ? 'Fuego directo' : '${r.waterTempC.toInt()} °C',
+                isColdBrew
+                    ? '${r.waterTempC.toInt()} °C (frío)'
+                    : hasMoka
+                        ? 'Fuego directo'
+                        : '${r.waterTempC.toInt()} °C',
                 Icons.thermostat_outlined,
-                color: hasMoka ? AppColors.disabled : _tempColor(r.waterTempC),
+                color: isColdBrew
+                    ? AppColors.aiBlue
+                    : hasMoka
+                        ? AppColors.disabled
+                        : _tempColor(r.waterTempC),
               ),
               _Param(
-                'Bloom',
-                hasBloom
-                    ? '${r.bloomG.toInt()} g × ${r.bloomSeconds}s'
-                    : 'No aplica',
-                Icons.hourglass_top_outlined,
-                color: hasBloom ? null : AppColors.disabled,
+                isColdBrew ? 'Maceración' : 'Bloom',
+                isColdBrew
+                    ? '${r.steepHours}h (12–24h)'
+                    : hasBloom
+                        ? '${r.bloomG.toInt()} g × ${r.bloomSeconds}s'
+                        : 'No aplica',
+                isColdBrew ? Icons.timelapse_outlined : Icons.hourglass_top_outlined,
+                color: (isColdBrew || hasBloom) ? null : AppColors.disabled,
               ),
               _Param(
                 'TDS objetivo',
@@ -876,6 +888,7 @@ class _RecipeCardState extends State<_RecipeCard> {
   String _prettyMethod(String m) => switch (m) {
         'french_press' => 'French Press',
         'aeropress'    => 'Aeropress',
+        'cold_brew'    => 'Cold Brew',
         _              => m.toUpperCase(),
       };
 }

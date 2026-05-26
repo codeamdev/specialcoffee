@@ -19,6 +19,10 @@ class BrewRecipeGenerator {
     'french_press': _BaseRecipe(ratio: 15.0, tempC: 93.0, bloomRatio: 0,   bloomSeconds: 0),
     'espresso':     _BaseRecipe(ratio: 2.0,  tempC: 93.0, bloomRatio: 0,   bloomSeconds: 0),
     'moka':         _BaseRecipe(ratio: 7.5,  tempC: 0,    bloomRatio: 0,   bloomSeconds: 0),
+    // Cold brew: concentrado 1:8, agua fría (4 °C), maceración 16 h (rango 12-24 h).
+    // TDS objetivo para concentrado: 2.5–3.5 % (no aplica rango Golden Cup de filtro).
+    // Los ajustes de temperatura y bloom se saltan en generate().
+    'cold_brew':    _BaseRecipe(ratio: 8.0,  tempC: 4.0,  bloomRatio: 0,   bloomSeconds: 0, steepHours: 16),
   };
 
   static const double _defaultDoseG = 20.0;
@@ -26,14 +30,22 @@ class BrewRecipeGenerator {
   BrewRecipe generate(AIContext context) {
     final method = context.brewMethod ?? 'v60';
     final base = _baseRecipes[method] ?? _baseRecipes['v60']!;
+    final isColdBrew = method == 'cold_brew';
 
     double tempC = base.tempC;
     double ratio = base.ratio;
     int bloomSeconds = base.bloomSeconds;
     final adjustments = <String>[];
 
+    // Cold brew: temperatura y bloom no aplican — saltar ajustes 1-4 y 6.
+    if (isColdBrew) {
+      adjustments.add('Maceración en frío ${base.steepHours}h a ${tempC.toInt()}°C — '
+          'sin calor, extracción lenta por tiempo');
+      adjustments.add('Ratio 1:${ratio.toInt()} (concentrado) — diluir 1:1 con agua o leche para servir');
+    }
+
     // ── Ajuste 1: Altitud → punto de ebullición (límite físico) ──────────────
-    if (context.altitudeMasl > 1500 && base.tempC > 0) {
+    if (!isColdBrew && context.altitudeMasl > 1500 && base.tempC > 0) {
       final boilingPoint = 100 - (context.altitudeMasl / 300);
       final maxUsable = boilingPoint - 2.0;
       if (tempC > maxUsable) {
@@ -46,7 +58,7 @@ class BrewRecipeGenerator {
     }
 
     // ── Ajuste 2: Nivel de tueste → temperatura ───────────────────────────────
-    if (base.tempC > 0) {
+    if (!isColdBrew && base.tempC > 0) {
       final roastDelta = switch (context.roastLevel) {
         'light' => 1.0,
         'dark'  => -2.0,
@@ -76,7 +88,7 @@ class BrewRecipeGenerator {
     }
 
     // ── Ajuste 4: Proceso del café → temperatura ──────────────────────────────
-    if (base.tempC > 0 && context.processType != null) {
+    if (!isColdBrew && base.tempC > 0 && context.processType != null) {
       final processDelta = switch (context.processType!) {
         'anaerobic_lactic' => -1.0,
         'natural'          => -0.5,
@@ -107,7 +119,7 @@ class BrewRecipeGenerator {
     }
 
     // ── Ajuste 6: Dureza del agua → temperatura ───────────────────────────────
-    if (base.tempC > 0) {
+    if (!isColdBrew && base.tempC > 0) {
       if (context.waterHardnessPpm > 200) {
         tempC -= 1.0;
         adjustments.add('Temperatura -1°C — agua muy dura (${context.waterHardnessPpm.toInt()} ppm)');
@@ -129,10 +141,12 @@ class BrewRecipeGenerator {
       waterTempC: tempC,
       bloomG: bloomG,
       bloomSeconds: bloomSeconds,
-      tdsTargetMin: context.userPreferredTdsMin,
-      tdsTargetMax: context.userPreferredTdsMax,
+      // Cold brew usa rango TDS de concentrado (2.5–3.5 %), no Golden Cup filtro.
+      tdsTargetMin: isColdBrew ? 2.5 : context.userPreferredTdsMin,
+      tdsTargetMax: isColdBrew ? 3.5 : context.userPreferredTdsMax,
       yieldTargetMin: 18.0,
       yieldTargetMax: 22.0,
+      steepHours: base.steepHours,
       adjustmentsApplied: adjustments,
     );
   }
@@ -143,11 +157,13 @@ class _BaseRecipe {
   final double tempC;
   final double bloomRatio;
   final int bloomSeconds;
+  final int steepHours;
 
   const _BaseRecipe({
     required this.ratio,
     required this.tempC,
     required this.bloomRatio,
     required this.bloomSeconds,
+    this.steepHours = 0,
   });
 }
