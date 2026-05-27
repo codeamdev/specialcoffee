@@ -229,5 +229,5 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | 2026-05-26 | 3c69afc   | H-1, H-2 cerrados — JWT refresh y session persistence verificados      |
 | 2026-05-26 | 3c69afc   | J-2 cerrado — build_runner ejecutado, brew_recipe.freezed.dart OK      |
 | 2026-05-26 | 43b53c7   | Reconciliación: J-1 corregido (tests existen, 155/168 pasan), D unificado (D-1..D-12), tabla de bloques añadida |
-| 2026-05-26 | Bloque 1  | J-3 cerrado — 168/168 tests verdes (_FakeRepo, tester.runAsync, ensureInitialized) |
-| 2026-05-26 | Bloque 1  | D-8/G-2 cerrados — rename hoursSinceClassification→hoursFromDepulpingReference (Dart puro, sin migración SQL) |
+| 2026-05-26 | 7dff2c3   | J-3 cerrado — 168/168 tests verdes (_FakeRepo, tester.runAsync, ensureInitialized) |
+| 2026-05-26 | 7dff2c3   | D-8/G-2 cerrados — rename hoursSinceClassification→hoursFromDepulpingReference (Dart puro, sin migración SQL) |
