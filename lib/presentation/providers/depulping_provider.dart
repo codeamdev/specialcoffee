@@ -151,7 +151,7 @@ class DepulpingNotifier extends _$DepulpingNotifier {
         region:                   lot?.region              ?? '',
         ambientTempC:             lot?.ambientTempC        ?? 20.0,
         ambientHumidityPct:       lot?.ambientHumidityPct  ?? 70.0,
-        hoursSinceClassification: hoursElapsed,
+        hoursFromDepulpingReference: hoursElapsed,
         userLotsCompleted:        ref.read(userLotsProvider).asData?.value.length ?? 0,
       );
 

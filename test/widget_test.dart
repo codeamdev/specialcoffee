@@ -6,8 +6,12 @@ import 'package:special_coffee/main.dart';
 
 void main() {
   testWidgets('App renders without crashing', (WidgetTester tester) async {
-    await tester.pumpWidget(const ProviderScope(child: SpecialCoffeeApp()));
-    await tester.pump();
-    // If no exception was thrown, the smoke test passes.
+    // runAsync exits the fake-async zone so background Futures from providers
+    // (_loadPersistedSession, etc.) complete in real async and don't leave
+    // pending fake timers that would fail _verifyInvariants.
+    await tester.runAsync(() async {
+      await tester.pumpWidget(const ProviderScope(child: SpecialCoffeeApp()));
+      await tester.pump();
+    });
   });
 }

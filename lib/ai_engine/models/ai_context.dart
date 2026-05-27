@@ -48,9 +48,9 @@ abstract class AIContext with _$AIContext {
     @Default(0.0) double pctAprovechamiento,
 
     // ── DESPULPADO ────────────────────────────────────────────────
-    // Horas desde el punto de referencia (clasificación → último pase → 0 si ninguno).
+    // Horas desde el punto de referencia (classification | harvest_pass | none).
     // 0.0 significa "sin referencia" — las reglas DEPU-RETRASO-* no disparan.
-    @Default(0.0) double hoursSinceClassification,
+    @Default(0.0) double hoursFromDepulpingReference,
 
     // ── PREPARACIÓN ───────────────────────────────────────────────
     String? brewMethod,               // 'v60'|'espresso'|'chemex'|'aeropress'|'french_press'

@@ -3,13 +3,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:special_coffee/ai_engine/ai_engine.dart';
 import 'package:special_coffee/ai_engine/models/ai_context.dart';
 import 'package:special_coffee/ai_engine/models/ai_rule.dart';
+import 'package:special_coffee/core/di/providers.dart';
+import 'package:special_coffee/domain/entities/fermentation_session.dart';
+import 'package:special_coffee/domain/repositories/fermentation_repository.dart';
 import 'package:special_coffee/presentation/providers/ai_engine_provider.dart';
 import 'package:special_coffee/presentation/providers/fermentation_provider.dart';
+import 'package:special_coffee/presentation/providers/lot_provider.dart';
 
-// ── Fake adapter (reusable) ───────────────────────────────────────────────────
+// ── Fake adapter ──────────────────────────────────────────────────────────────
 
 class _FakeAdapter extends InferenceAdapter {
-  List<Recommendation> Function(AIContext) _infer;
+  final List<Recommendation> Function(AIContext) _infer;
 
   _FakeAdapter([List<Recommendation> Function(AIContext)? infer])
       : _infer = infer ?? ((_) => []);
@@ -20,10 +24,83 @@ class _FakeAdapter extends InferenceAdapter {
   @override Future<List<Recommendation>> infer(AIContext context) async => _infer(context);
 }
 
+// ── In-memory FermentationRepository ─────────────────────────────────────────
+
+class _FakeRepo implements FermentationRepository {
+  final _sessions = <String, FermentationSession>{};
+
+  @override
+  Future<FermentationSession> createSession({
+    required String lotId,
+    required String processType,
+  }) async {
+    final s = FermentationSession(
+      id: 'fake-$lotId',
+      lotId: lotId,
+      ownerId: 'test-user',
+      processType: processType,
+      createdAt: DateTime.now(),
+    );
+    _sessions[lotId] = s;
+    return s;
+  }
+
+  @override
+  Future<FermentationSession?> getActiveSession(String lotId) async =>
+      _sessions[lotId];
+
+  @override
+  Future<FermentationReadingRecord> addReading({
+    required String sessionId,
+    required String lotId,
+    required int readingNumber,
+    required double hoursElapsed,
+    required double phValue,
+    required double mucilagoTempC,
+    String mucilageState = 'liquid',
+    double? ambientTempC,
+    String aiAlertLevel = 'none',
+    String? aiAlertRuleId,
+    double? aiProjectedEndH,
+  }) async =>
+      FermentationReadingRecord(
+        id: '$sessionId-r$readingNumber',
+        sessionId: sessionId,
+        lotId: lotId,
+        ownerId: 'test-user',
+        readingNumber: readingNumber,
+        hoursElapsed: hoursElapsed,
+        phValue: phValue,
+        mucilagoTempC: mucilagoTempC,
+        mucilageState: mucilageState,
+        aiAlertLevel: aiAlertLevel,
+        aiAlertRuleId: aiAlertRuleId,
+        aiProjectedEndH: aiProjectedEndH,
+        recordedAt: DateTime.now(),
+      );
+
+  @override
+  Future<List<FermentationReadingRecord>> getReadings(String sessionId) async => [];
+
+  @override
+  Future<void> closeSession({
+    required String sessionId,
+    required String endReason,
+    required double actualDurationH,
+    required double phFinal,
+  }) async {}
+}
+
+// ── Container factory ─────────────────────────────────────────────────────────
+
 ProviderContainer _container({List<Recommendation> Function(AIContext)? infer}) {
   final engine = AIEngine.withAdapter(adapter: _FakeAdapter(infer));
   return ProviderContainer(
-    overrides: [aiEngineProvider.overrideWith((ref) async => engine)],
+    overrides: [
+      aiEngineProvider.overrideWith((ref) async => engine),
+      fermentationLocalRepoProvider.overrideWith((ref) => _FakeRepo()),
+      lotByIdProvider('LOT-001').overrideWith((ref) async => null),
+    ],
   );
 }
 
@@ -39,6 +116,7 @@ Recommendation _rec(String action) => Recommendation(
 );
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   const lotId = 'LOT-001';
 
   // ── Initial state ────────────────────────────────────────────────────────

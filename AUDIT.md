@@ -89,7 +89,7 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | D-5 | Agronomía     | Umbrales flotación (warn 20%, crit 35%) y aprovechamiento (60%) — estimados | coffee_thresholds.dart:30–37   | 🟠 Calibrar con Cenicafé / FNC |
 | D-6 | Agronomía     | Umbrales °Brix cereza (óptimo 18–24) — fuente general SCA          | coffee_thresholds.dart:8             | 🟠 Calibrar con Cenicafé Avances Técnicos |
 | D-7 | Agronomía     | Retraso despulpado: warnH=6h (sin doc), critH=8h (C-1)             | coffee_thresholds.dart:42            | 🟠 Calibrar con Cenicafé |
-| D-8 | Código        | Campo `hours_since_classification` pendiente de renombrar en DepulpingDao | depulping_dao.dart             | 🟡 Pendiente rename |
+| D-8 | Código        | Rename `hoursSinceClassification` → `hoursFromDepulpingReference` (Dart puro, sin migración SQL) | ai_context.dart, condition_evaluator.dart, depulping_rules.dart, depulping_provider.dart | ✅ Cerrado (Bloque 1) |
 | D-9 | Dominio       | Catación: migrar de SCA Classic 2004 a CVA cuando FNC publique adaptación colombiana | cupping_tables.dart:4 | ⚪ Post-MVP |
 | D-10| —             | Gap en numeración — nunca asignado                                  | —                                    | — |
 | D-11| Android       | Decidir `applicationId` definitivo antes de publicar en Play Store  | ANDROID_SETUP.md                    | ⚪ Fase final |
@@ -133,9 +133,9 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 - **Hallazgo**: `local_lots` es la tabla local activa (devBypass). `lots` es la tabla legacy. El ítem #14 debe reconciliarlas. Ver D-12.
 - **Estado**: ⚪ Fase final (post-MVP sync)
 
-### G-2 — Campo `hours_since_classification` pendiente de renombrar
-- **Hallazgo**: nombre de variable temporal en DepulpingDao que no coincide con el dominio. Ver D-8.
-- **Estado**: 🟡 Pendiente rename
+### G-2 — ✅ Campo `hours_since_classification` renombrado
+- **Fix**: `hoursFromDepulpingReference` en ai_context + condition_evaluator + depulping_rules + depulping_provider. SQL column `hours_from_reference` ya era correcto — sin migración. Ver D-8.
+- **Estado**: ✅ Cerrado (Bloque 1)
 
 ---
 
@@ -161,24 +161,20 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 
 ## J. Calidad de Código y Tests
 
-### J-1 — ✅ Tests existen — 13 fallos a resolver
-- **Corrección**: J-1 estaba mal documentado. `test/` tiene 8 archivos, 1942 líneas. Estado real al 2026-05-26:
-  - **155/168 tests pasan** (ai_engine: todos OK, brew_provider: todos OK).
-  - **13 fallan** en dos grupos:
-    1. `fermentation_provider_test.dart` (10 tests): `FermentationNotifier.addReading` + `locked after first reading` — causa: `TestWidgetsFlutterBinding.ensureInitialized()` ausente en `main()` + repo Drift no mockeado en tests que llaman `addReading`.
-    2. `recommendation_card_test.dart` (2 tests): widget test sin binding inicializado.
-    3. `widget_test.dart` (1 test): `App renders without crashing` — timer pendiente por `flutter_local_notifications`.
-- **Estado**: 🔴 Abierto (J-3 para tracking del fix)
+### J-1 — ✅ Tests existen — 168/168 pasan
+- **Corrección**: J-1 estaba mal documentado. `test/` tiene 8 archivos, 1942 líneas.
+- **Estado post-Bloque 1**: **168/168 tests pasan** (2026-05-26). Ver J-3 para detalle del fix.
+- **Estado**: ✅ Cerrado (Bloque 1)
 
 ### J-2 — ✅ build_runner artefactos regenerados
 - **Fix**: `dart run build_runner build` ejecutado en sesión 2026-05-26. `brew_recipe.freezed.dart` actualizado con `steepHours`.
 - **Estado**: ✅ Cerrado (commit `3c69afc`)
 
-### J-3 — 13 tests fallando (causas conocidas)
-- **Grupo 1** (`fermentation_provider_test.dart`): falta `TestWidgetsFlutterBinding.ensureInitialized()` + override de `fermentationLocalRepoProvider` con repo in-memory.
-- **Grupo 2** (`recommendation_card_test.dart`): binding no inicializado en setup.
-- **Grupo 3** (`widget_test.dart`): timer pendiente de notificaciones — necesita `pumpAndSettle` con timeout extendido o fake `NotificationService`.
-- **Estado**: 🔴 Abierto
+### J-3 — ✅ 13 tests fallando — resueltos
+- **Diagnóstico** (todos eran andamiaje de test — cero bugs de producción):
+  - **Grupo 1** (`fermentation_provider_test.dart`, 12 tests): `ServicesBinding.instance` disparado por LazyDatabase/path_provider escapaba el `catch (_)` en zona de test Flutter. Fix: `_FakeRepo implements FermentationRepository` (in-memory, sin DB) + `fermentationLocalRepoProvider` override + `lotByIdProvider` override + `TestWidgetsFlutterBinding.ensureInitialized()`.
+  - **Grupo 2** (`widget_test.dart`, 1 test): `_loadPersistedSession()` registraba `Future()` en zona FakeAsync; timer pendiente al final del test fallaba `_verifyInvariants`. Fix: envolver en `tester.runAsync()` para salir de la zona fake.
+- **Estado**: ✅ Cerrado (Bloque 1)
 
 ---
 
@@ -197,16 +193,16 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | A. Dominio         | B-1, B-3          | C-2         | C-1, C-4, D-9 | B-2, B-4      | 7 etapas IA  |
 | B. Etapas          | B-1, B-3          | —           | —             | B-2, B-4      | —            |
 | C. Reglas          | C-3               | C-2         | C-1, C-4      | —             | —            |
-| D. Deudas técnicas | —                 | D-2,D-5,D-6,D-7 | D-8      | D-1,D-4,D-9,D-11,D-12 | D-3   |
+| D. Deudas técnicas | —                 | D-2,D-5,D-6,D-7 | —        | D-1,D-4,D-9,D-11,D-12 | D-3, D-8 |
 | E. Conflictos      | —                 | —           | —             | —             | E-1, E-2     |
 | F. Preparación     | —                 | —           | F-2           | —             | F-1          |
-| G. Persistencia    | —                 | —           | G-2 (=D-8)    | G-1 (=D-12)   | —            |
+| G. Persistencia    | —                 | —           | —             | G-1 (=D-12)   | G-2 (=D-8)   |
 | H. Seguridad       | —                 | —           | —             | —             | H-1, H-2     |
 | I. Variedades      | —                 | —           | I-1           | —             | —            |
-| J. Tests/Código    | J-1 (corr.), J-3  | —           | —             | —             | J-2          |
+| J. Tests/Código    | —                 | —           | —             | —             | J-1, J-2, J-3 |
 | K. UX              | —                 | —           | —             | K-1           | —            |
 
-**Abiertos críticos (MVP)**: B-1 (Lavado), B-3 (Trilla/ítem#9), C-3 (userAvgFermentationH), J-3 (13 tests fallando).
+**Abiertos críticos (MVP)**: B-1 (Lavado), B-3 (Trilla/ítem#9), C-3 (userAvgFermentationH).
 
 ---
 
@@ -215,7 +211,7 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | Bloque | Ítems | Descripción | Estado |
 |--------|-------|-------------|--------|
 | **Bloque 0** | Reconciliación | J-1 corregido, D unificado, F-1/J-2 marcados | ✅ 2026-05-26 |
-| **Bloque 1** | J-3, D-8, G-2 | Fix 13 tests fallando + rename campo DepulpingDao | 🔴 Pendiente OK |
+| **Bloque 1** | J-3, D-8, G-2 | Fix 13 tests fallando + rename campo DepulpingDao | ✅ 2026-05-26 |
 | **Bloque 2** | B-1, C-1 | Módulo Lavado (entidad + reglas + UI) + expansión reglas secado | ⏳ |
 | **Bloque 3** | C-3, C-4, I-1 | userAvgFermentationH, integración process_selection, variedades | ⏳ |
 | **Bloque 4** | B-3 | Módulo Trilla (backlog ítem #9) | ⏳ |
@@ -232,4 +228,6 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | 2026-05-26 | 3c69afc   | F-1 cerrado — Cold Brew implementado (recipe + UI + regla)             |
 | 2026-05-26 | 3c69afc   | H-1, H-2 cerrados — JWT refresh y session persistence verificados      |
 | 2026-05-26 | 3c69afc   | J-2 cerrado — build_runner ejecutado, brew_recipe.freezed.dart OK      |
-| 2026-05-26 | —         | Reconciliación: J-1 corregido (tests existen, 155/168 pasan), D unificado (D-1..D-12), tabla de bloques añadida |
+| 2026-05-26 | 43b53c7   | Reconciliación: J-1 corregido (tests existen, 155/168 pasan), D unificado (D-1..D-12), tabla de bloques añadida |
+| 2026-05-26 | Bloque 1  | J-3 cerrado — 168/168 tests verdes (_FakeRepo, tester.runAsync, ensureInitialized) |
+| 2026-05-26 | Bloque 1  | D-8/G-2 cerrados — rename hoursSinceClassification→hoursFromDepulpingReference (Dart puro, sin migración SQL) |

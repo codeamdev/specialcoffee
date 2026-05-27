@@ -14,7 +14,7 @@ abstract final class DepulpingRules {
       tags: ['depulping', 'timing', 'warning'],
       conditions: [
         RuleCondition(
-          variable: 'hours_since_classification',
+          variable: 'hours_from_depulping_reference',
           operator: ConditionOperator.gte,
           threshold: CoffeeThresholds.depulpingWarnH,
         ),
@@ -24,9 +24,9 @@ abstract final class DepulpingRules {
         alertLevel: AlertLevel.warning,
         confidenceBase: 0.82,
         explanationByRole: {
-          'farmer':    '⚠️ Han pasado {hours_since_classification} horas desde la referencia. Despulpe pronto para evitar fermentación indeseada.',
-          'processor': '⚠️ {hours_since_classification} h desde referencia — superando las 6 h preventivas. Despulpado urgente recomendado.',
-          'barista':   '⚠️ Retraso de {hours_since_classification} h puede generar notas fermentadas indeseadas en taza.',
+          'farmer':    '⚠️ Han pasado {hours_from_depulping_reference} horas desde la referencia. Despulpe pronto para evitar fermentación indeseada.',
+          'processor': '⚠️ {hours_from_depulping_reference} h desde referencia — superando las 6 h preventivas. Despulpado urgente recomendado.',
+          'barista':   '⚠️ Retraso de {hours_from_depulping_reference} h puede generar notas fermentadas indeseadas en taza.',
         },
         suggestedActions: [
           'Despulpar en la próxima hora',
@@ -47,7 +47,7 @@ abstract final class DepulpingRules {
       tags: ['depulping', 'timing', 'critical'],
       conditions: [
         RuleCondition(
-          variable: 'hours_since_classification',
+          variable: 'hours_from_depulping_reference',
           operator: ConditionOperator.gte,
           threshold: CoffeeThresholds.depulpingCriticalH,
         ),
@@ -58,7 +58,7 @@ abstract final class DepulpingRules {
         confidenceBase: 0.90,
         explanationByRole: {
           'farmer':    '🔴 Más de 8 h sin despulpar. Las cerezas pueden estar iniciando fermentación no controlada — actúe ahora.',
-          'processor': '🔴 {hours_since_classification} h desde referencia — supera el límite crítico de 8 h (C-1). Despulpar de inmediato.',
+          'processor': '🔴 {hours_from_depulping_reference} h desde referencia — supera el límite crítico de 8 h (C-1). Despulpar de inmediato.',
           'barista':   '🔴 Más de 8 h sin despulpar compromete el perfil del lote. Alta probabilidad de defectos fermentativos en taza.',
         },
         suggestedActions: [

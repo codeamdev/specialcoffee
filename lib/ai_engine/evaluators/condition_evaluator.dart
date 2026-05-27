@@ -15,7 +15,7 @@ class ConditionEvaluator {
     'cherry_color_pct':            (c) => c.cherryColorPct.toDouble(),
     'flotation_float_pct':         (c) => c.flotationFloatPct,
     'pct_aprovechamiento':         (c) => c.pctAprovechamiento,
-    'hours_since_classification':  (c) => c.hoursSinceClassification,
+    'hours_from_depulping_reference': (c) => c.hoursFromDepulpingReference,
     'fermentation_hours_elapsed':  (c) => c.fermentationHoursElapsed,
     'current_ph':                  (c) => c.currentPh,
     'mucilago_temp_c':             (c) => c.mucilagoTempC,
