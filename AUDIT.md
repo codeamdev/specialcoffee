@@ -16,9 +16,9 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | 2  | Clasificación     | ✅ classification_rules (3 reglas)        | —        | ✅ |
 | 3  | Despulpado        | ✅ depulping_rules (2 reglas)             | —        | ✅ |
 | 4  | Fermentación      | ✅ fermentation_rules (4 reglas, lavado)  | C-2      | 🟠 parcial |
-| 5  | Lavado            | ❌ Sin reglas, sin etapa en stepper       | B-1      | 🔴 |
+| 5  | Lavado            | ✅ washing_rules (4 reglas)               | —        | ✅ |
 | 6  | Reposo            | ❌ Sin etapa en stepper                   | —        | ⚪ Post-MVP |
-| 7  | Secado            | ✅ drying_rules (3 reglas)               | C-1      | 🟡 sparse |
+| 7  | Secado            | ✅ drying_rules (7 reglas)               | —        | ✅ |
 | 8  | Trilla            | ❌ Sin reglas, sin etapa en stepper       | B-3      | 🔴 |
 | 9  | Clasificación 2   | ❌ Parte de Trilla                        | B-3      | 🔴 |
 | 10 | Empaque           | ❌ Sin reglas, sin etapa en stepper       | —        | ⚪ Post-MVP |
@@ -28,12 +28,15 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 
 ## B. Etapas Faltantes
 
-### B-1 — Lavado: etapa sin implementar
+### B-1 — ✅ Lavado: etapa implementada
 - **Área**: Dominio + AI + UI
-- **Impacto**: El flujo lavado salta de Fermentación → Secado sin registrar el lavado del grano.
-- **Reglas mínimas**: tiempo de lavado, temperatura del agua, número de cambios de agua, pH efluente.
-- **Prioridad**: Alta — bloquea flujo no-natural completo (MVP).
-- **Estado**: 🔴 Abierto
+- **Fix (Bloque 2, 2026-05-26)**:
+  - Schema v7: `CREATE TABLE washing_sessions` (aditivo, sin ALTER/DROP). Entidad `WashingSession`, DAO `WashingDao`, repositorio `WashingLocalRepository`.
+  - 4 reglas AI (`washing_rules.dart`): WASH-TEMP-HIGH-001, WASH-TEMP-LOW-001, WASH-INSUFFICIENT-CHANGES-001, WASH-EFFLUENT-PH-HIGH-001.
+  - Stepper no-natural: 6 → 7 pasos; Lavado insertado entre Fermentación y Secado. Secuencia natural sin cambios (4 pasos).
+  - `WashingNotifier`, `WashingScreen` con form + resultado. Umbrales en `coffee_thresholds.dart` (ver D-13).
+  - Tests: `washing_rules_test.dart` + `washing_provider_test.dart`.
+- **Estado**: ✅ Cerrado (Bloque 2)
 
 ### B-2 — Reposo: etapa sin implementar
 - **Área**: Dominio + UI
@@ -55,9 +58,15 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 
 ## C. Motor de Reglas — Calidad y Cobertura
 
-### C-1 — Reglas de secado escasas (3 reglas)
-- **Hallazgo**: `drying_rules.dart` tiene 3 reglas. Faltan: temperatura ambiental > 35°C, humedad relativa del aire, control de volteo (días), riesgo de sobre-secado (< 10% humedad del grano).
-- **Estado**: 🟡 Pendiente expansión
+### C-1 — ✅ Reglas de secado expandidas (3 → 7 reglas)
+- **Hallazgo original**: `drying_rules.dart` tenía 3 reglas.
+- **Fix (Bloque 2, 2026-05-26)**: 4 reglas nuevas añadidas (existentes intactas):
+  - `DRY-HEAT-STRESS-001`: temp ambiental > 35°C → REDUCE_SUN_EXPOSURE (warning).
+  - `DRY-HIGH-AMBIENT-HUMIDITY-001`: hum. ambiental > 80% + grano > 12% → MONITOR_MOLD_RISK (warning).
+  - `DRY-CRITICAL-AMBIENT-HUMIDITY-001`: hum. ambiental > 85% + día ≥ 3 → SHELTER_COFFEE_IMMEDIATELY (high); supercede DRY-HIGH-AMBIENT-HUMIDITY-001.
+  - `DRY-TURNING-REMINDER-001`: día ≥ 3 + grano > 40% → INCREASE_TURNING_FREQUENCY (info).
+  - Umbrales en `coffee_thresholds.dart` (ver D-14). Tests en `drying_rules_expanded_test.dart`.
+- **Estado**: ✅ Cerrado (Bloque 2)
 
 ### C-2 — Fermentación: sin reglas honey/anaeróbico
 - **Hallazgo**: `fermentation_rules.dart` cubre solo lavado (pH, temperatura, tiempo). No hay reglas para fermentación honey (sin agua) ni anaeróbico (presión CO₂, pH láctico < 3.8).
@@ -94,6 +103,8 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | D-10| —             | Gap en numeración — nunca asignado                                  | —                                    | — |
 | D-11| Android       | Decidir `applicationId` definitivo antes de publicar en Play Store  | ANDROID_SETUP.md                    | ⚪ Fase final |
 | D-12| Persistencia  | Reconciliar `local_lots` vs `lots` — fuente de verdad en ítem #14  | local_lots_table.dart:7              | ⚪ Fase final |
+| D-13| Agronomía     | Umbrales Lavado (waterTempC 15–30°C, waterChanges≥2, effluentPh≤5.5) — estimados, sin doc Cenicafé | coffee_thresholds.dart | 🟠 Calibrar con Cenicafé / FNC |
+| D-14| Agronomía     | Umbrales secado expandidos (heatStress 35°C, highAmbHum 80%, critAmbHum 85%, turningDay 3, turningGrainHum 40%) — estimados | coffee_thresholds.dart | 🟠 Calibrar con Cenicafé / FNC |
 
 ---
 
@@ -190,10 +201,10 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 
 | Área | 🔴 Abiertos | 🟠 Deuda | 🟡 Pendientes | ⚪ Post-MVP/Final | ✅ Cerrados |
 |------|------------|----------|--------------|------------------|------------|
-| A. Dominio         | B-1, B-3          | C-2         | C-1, C-4, D-9 | B-2, B-4      | 7 etapas IA  |
-| B. Etapas          | B-1, B-3          | —           | —             | B-2, B-4      | —            |
-| C. Reglas          | C-3               | C-2         | C-1, C-4      | —             | —            |
-| D. Deudas técnicas | —                 | D-2,D-5,D-6,D-7 | —        | D-1,D-4,D-9,D-11,D-12 | D-3, D-8 |
+| A. Dominio         | B-3               | C-2         | C-4, D-9      | B-2, B-4      | 9 etapas IA  |
+| B. Etapas          | B-3               | —           | —             | B-2, B-4      | B-1          |
+| C. Reglas          | C-3               | C-2         | C-4           | —             | C-1          |
+| D. Deudas técnicas | —                 | D-2,D-5,D-6,D-7,D-13,D-14 | — | D-1,D-4,D-9,D-11,D-12 | D-3, D-8 |
 | E. Conflictos      | —                 | —           | —             | —             | E-1, E-2     |
 | F. Preparación     | —                 | —           | F-2           | —             | F-1          |
 | G. Persistencia    | —                 | —           | —             | G-1 (=D-12)   | G-2 (=D-8)   |
@@ -202,7 +213,7 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | J. Tests/Código    | —                 | —           | —             | —             | J-1, J-2, J-3 |
 | K. UX              | —                 | —           | —             | K-1           | —            |
 
-**Abiertos críticos (MVP)**: B-1 (Lavado), B-3 (Trilla/ítem#9), C-3 (userAvgFermentationH).
+**Abiertos críticos (MVP)**: B-3 (Trilla/ítem#9), C-3 (userAvgFermentationH).
 
 ---
 
@@ -212,7 +223,7 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 |--------|-------|-------------|--------|
 | **Bloque 0** | Reconciliación | J-1 corregido, D unificado, F-1/J-2 marcados | ✅ 2026-05-26 |
 | **Bloque 1** | J-3, D-8, G-2 | Fix 13 tests fallando + rename campo DepulpingDao | ✅ 2026-05-26 |
-| **Bloque 2** | B-1, C-1 | Módulo Lavado (entidad + reglas + UI) + expansión reglas secado | ⏳ |
+| **Bloque 2** | B-1, C-1 | Módulo Lavado (entidad + reglas + UI) + expansión reglas secado | ✅ 2026-05-26 |
 | **Bloque 3** | C-3, C-4, I-1 | userAvgFermentationH, integración process_selection, variedades | ⏳ |
 | **Bloque 4** | B-3 | Módulo Trilla (backlog ítem #9) | ⏳ |
 | **Fase final** | D-1,D-4,D-12,D-11 | Android + sync PostgREST — no tocar hasta OK | 🔒 |
@@ -231,3 +242,6 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | 2026-05-26 | 43b53c7   | Reconciliación: J-1 corregido (tests existen, 155/168 pasan), D unificado (D-1..D-12), tabla de bloques añadida |
 | 2026-05-26 | 7dff2c3   | J-3 cerrado — 168/168 tests verdes (_FakeRepo, tester.runAsync, ensureInitialized) |
 | 2026-05-26 | 7dff2c3   | D-8/G-2 cerrados — rename hoursSinceClassification→hoursFromDepulpingReference (Dart puro, sin migración SQL) |
+| 2026-05-26 | —         | B-1 cerrado — módulo Lavado completo: schema v7, 4 reglas AI, stepper 7 pasos, WashingScreen, 8 tests |
+| 2026-05-26 | —         | C-1 cerrado — drying_rules expandido: 3 → 7 reglas, DRY-CRITICAL supercede DRY-HIGH, 11 tests regresión |
+| 2026-05-26 | —         | D-13/D-14 abiertos — umbrales lavado y secado nuevo: deuda de calibración Cenicafé/FNC (213 tests ✅) |

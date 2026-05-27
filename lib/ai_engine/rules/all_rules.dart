@@ -7,6 +7,7 @@ import 'package:special_coffee/ai_engine/rules/drying_rules.dart';
 import 'package:special_coffee/ai_engine/rules/fermentation_rules.dart';
 import 'package:special_coffee/ai_engine/rules/harvest_rules.dart';
 import 'package:special_coffee/ai_engine/rules/process_selection_rules.dart';
+import 'package:special_coffee/ai_engine/rules/washing_rules.dart';
 
 abstract final class AllRules {
   static List<AIRule> get all => [
@@ -15,10 +16,11 @@ abstract final class AllRules {
     ...DepulpingRules.all,
     ...ProcessSelectionRules.all,
     ...FermentationRules.all,
+    ...WashingRules.all,
     ...DryingRules.all,
     ...BrewingRules.all,
     ...CuppingRules.all,
   ];
 
-  static const String version = '1.1.0';
+  static const String version = '1.2.0';
 }

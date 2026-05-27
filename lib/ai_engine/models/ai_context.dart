@@ -77,6 +77,14 @@ abstract class AIContext with _$AIContext {
     @Default(0.0) double userAvgFermentationH,
     @Default(0) int userLotsCompleted,
 
+    // ── LAVADO ────────────────────────────────────────────────────
+    // 0.0 en washingWaterTempC y washingEffluentPh significa "no registrado".
+    // Las reglas WASH-TEMP-LOW y WASH-EFFLUENT usan between/gt para evitar
+    // falsos positivos con el valor por defecto.
+    @Default(0.0) double washingWaterTempC,
+    @Default(0)   int    washingWaterChanges,
+    @Default(0.0) double washingEffluentPh,
+
     // ── CATACIÓN ──────────────────────────────────────────────────
     @Default(0.0) double scaTotalScore,
     @Default(0.0) double userSpecialtyRatePct,

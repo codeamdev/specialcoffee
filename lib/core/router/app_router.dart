@@ -15,6 +15,7 @@ import 'package:special_coffee/presentation/screens/classification/classificatio
 import 'package:special_coffee/presentation/screens/cupping/cupping_screen.dart';
 import 'package:special_coffee/presentation/screens/depulping/depulping_screen.dart';
 import 'package:special_coffee/presentation/screens/harvest/harvest_screen.dart';
+import 'package:special_coffee/presentation/screens/washing/washing_screen.dart';
 import 'package:special_coffee/presentation/screens/lot/lot_create_screen.dart';
 import 'package:special_coffee/presentation/screens/lot/lot_detail_screen.dart';
 import 'package:special_coffee/presentation/screens/lot/lot_list_screen.dart';
@@ -123,6 +124,12 @@ GoRouter appRouter(Ref ref) {
                   GoRoute(
                     path: 'depulping',
                     builder: (context, state) => DepulpingScreen(
+                      lotId: state.pathParameters['id']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'washing',
+                    builder: (context, state) => WashingScreen(
                       lotId: state.pathParameters['id']!,
                     ),
                   ),

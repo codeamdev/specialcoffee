@@ -36,6 +36,9 @@ class ConditionEvaluator {
     'user_lots_completed':         (c) => c.userLotsCompleted.toDouble(),
     'sca_total_score':             (c) => c.scaTotalScore,
     'user_specialty_rate_pct':     (c) => c.userSpecialtyRatePct,
+    'washing_water_temp_c':        (c) => c.washingWaterTempC,
+    'washing_water_changes':       (c) => c.washingWaterChanges.toDouble(),
+    'washing_effluent_ph':         (c) => c.washingEffluentPh,
   };
 
   // ── Campos de texto del AIContext ────────────────────────────────────────────

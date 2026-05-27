@@ -43,4 +43,23 @@ abstract final class CoffeeThresholds {
   //       (ej. Geisha podría requerir 4–6h por mayor sensibilidad a fermentación).
   static const double depulpingWarnH     = 6.0;
   static const double depulpingCriticalH = 8.0;
+
+  // ── Lavado (washing) ──────────────────────────────────────────────────────
+  // D-13: todos los umbrales son estimaciones de campo — calibrar con Cenicafé.
+  // Temperatura de agua: 15–30°C rango práctico de beneficio húmedo.
+  // Cambios de agua: ≥ 2 es el mínimo estándar para café de especialidad.
+  // pH efluente: valor > 5.5 sugiere fermentación incompleta (mucílago residual).
+  static const double washingWaterTempCMin   = 15.0; // < 15°C → eficiencia reducida
+  static const double washingWaterTempCMax   = 30.0; // > 30°C → riesgo de daño al grano
+  static const int    washingMinWaterChanges = 2;    // < 2 → lavado incompleto
+  static const double washingEffluentPhWarn  = 5.5;  // > 5.5 → fermentación posiblemente incompleta
+
+  // ── Secado — umbrales nuevos (C-1) ──────────────────────────────────────
+  // D-14: todos son estimaciones de referencia — calibrar con Cenicafé
+  //       Avances Técnicos (publicaciones de secado en cama africana / solar).
+  static const double dryingHeatStressTempC    = 35.0; // > 35°C amb → riesgo agrietamiento del grano
+  static const double dryingHighAmbHumidityPct = 80.0; // > 80% HR → riesgo hongos (warning)
+  static const double dryingCritAmbHumidityPct = 85.0; // > 85% HR → riesgo hongos (high); supersede warning
+  static const double dryingTurningMinGrainHum = 40.0; // grano > 40% humedad → voltear necesario
+  static const int    dryingTurningStartDay    = 3;    // desde día 3 en adelante → voltear activamente
 }

@@ -61,6 +61,7 @@ abstract final class AppRoutes {
   static const String lotDetail = '/lots/:id';
   static const String lotCreate = '/lots/create';
   static const String fermentation = '/lots/:id/fermentation';
+  static const String washing      = '/lots/:id/washing';
   static const String drying = '/lots/:id/drying';
   static const String harvest        = '/lots/:id/harvest';
   static const String classification = '/lots/:id/classification';
