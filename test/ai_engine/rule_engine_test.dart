@@ -249,6 +249,55 @@ void main() {
       expect(ids, contains('NEW-002'));
       expect(ids, isNot(contains('OLD-001')));
     });
+
+    test('same action: critical (0.75) beats warning (0.95) — alertLevel over confidence', () {
+      engine.loadRules([
+        rule(
+          id: 'WARN-HIGH-CONF',
+          priority: 2,
+          alertLevel: AlertLevel.warning,
+          confidenceBase: 0.95,
+          conditions: [numCond('altitude_masl', ConditionOperator.gt, 0)],
+          action: 'CHECK_TEMPERATURE',
+        ),
+        rule(
+          id: 'CRIT-LOW-CONF',
+          priority: 1,
+          alertLevel: AlertLevel.critical,
+          confidenceBase: 0.75,
+          conditions: [numCond('altitude_masl', ConditionOperator.gt, 0)],
+          action: 'CHECK_TEMPERATURE',
+        ),
+      ]);
+      final results = engine.evaluate(ctx());
+      expect(results.length, 1);
+      expect(results.first.ruleId, 'CRIT-LOW-CONF');
+      expect(results.first.alertLevel, AlertLevel.critical);
+    });
+
+    test('same action, same alertLevel: higher confidence wins', () {
+      engine.loadRules([
+        rule(
+          id: 'LOW-CONF',
+          priority: 2,
+          alertLevel: AlertLevel.warning,
+          confidenceBase: 0.70,
+          conditions: [numCond('altitude_masl', ConditionOperator.gt, 0)],
+          action: 'CHECK_TEMPERATURE',
+        ),
+        rule(
+          id: 'HIGH-CONF',
+          priority: 1,
+          alertLevel: AlertLevel.warning,
+          confidenceBase: 0.90,
+          conditions: [numCond('altitude_masl', ConditionOperator.gt, 0)],
+          action: 'CHECK_TEMPERATURE',
+        ),
+      ]);
+      final results = engine.evaluate(ctx());
+      expect(results.length, 1);
+      expect(results.first.ruleId, 'HIGH-CONF');
+    });
   });
 
   // ── Real-world scenarios ─────────────────────────────────────────────────

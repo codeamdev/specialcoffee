@@ -145,6 +145,7 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 ### G-1 — Dos tablas para Lot (`local_lots` vs `lots`)
 - **Hallazgo**: `local_lots` es la tabla local activa (devBypass). `lots` es la tabla legacy. El ítem #14 debe reconciliarlas. Ver D-12.
 - **Estado**: ⚪ Fase final (post-MVP sync)
+- **🔴 BLOQUEANTE para activar sync**: `sync_queue` no tiene `owner_id` ni política RLS. Antes de que cualquier código de sync escriba en ella, la tabla necesita: (1) columna `owner_id TEXT NOT NULL REFERENCES users(id)`, (2) política RLS `USING (owner_id = current_user_id())`, (3) GRANTs actualizados. Esto es bloqueante — no opcional. Migración pendiente: `0003_sync_queue_owner_rls.sql`.
 
 ### G-2 — ✅ Campo `hours_since_classification` renombrado
 - **Fix**: `hoursFromDepulpingReference` en ai_context + condition_evaluator + depulping_rules + depulping_provider. SQL column `hours_from_reference` ya era correcto — sin migración. Ver D-8.

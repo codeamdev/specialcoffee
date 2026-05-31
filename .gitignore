@@ -18,9 +18,9 @@ google-services.json
 GoogleService-Info.plist
 lib/firebase_options.dart
 
-# Env / Secrets
-.env
-.env.*
+# Env / Secrets — .env.example es la excepción (plantilla con placeholders)
+.env*
+!.env.example
 secrets/
 
 # Config files con credenciales — nunca commitear

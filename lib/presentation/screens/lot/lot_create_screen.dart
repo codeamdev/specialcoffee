@@ -10,25 +10,11 @@ import 'package:special_coffee/core/theme/app_text_styles.dart';
 import 'package:special_coffee/domain/entities/lot.dart';
 import 'package:special_coffee/presentation/providers/auth_provider.dart';
 import 'package:special_coffee/presentation/providers/lot_provider.dart';
+import 'package:special_coffee/domain/entities/coffee_variety.dart';
+import 'package:special_coffee/presentation/providers/varieties_provider.dart';
 import 'package:special_coffee/presentation/widgets/ai/gemini_status_banner.dart';
 import 'package:special_coffee/presentation/widgets/ai/recommendation_card.dart';
 import 'package:special_coffee/presentation/widgets/guides/process_guide_card.dart';
-
-// ── Variety data (screen-private) ─────────────────────────────────────────
-
-class _Variety {
-  final String id;
-  final String name;
-  final String sensitivity;
-  final double scaPotential;
-
-  const _Variety({
-    required this.id,
-    required this.name,
-    required this.sensitivity,
-    required this.scaPotential,
-  });
-}
 
 // ── Screen ─────────────────────────────────────────────────────────────────
 
@@ -40,16 +26,6 @@ class LotCreateScreen extends ConsumerStatefulWidget {
 }
 
 class _LotCreateScreenState extends ConsumerState<LotCreateScreen> {
-  static const _varieties = [
-    _Variety(id: 'var_geisha',       name: 'Geisha',        sensitivity: 'very_high', scaPotential: 89.5),
-    _Variety(id: 'var_pink_bourbon', name: 'Pink Bourbon',  sensitivity: 'very_high', scaPotential: 88.0),
-    _Variety(id: 'var_typica',       name: 'Typica',        sensitivity: 'high',      scaPotential: 87.0),
-    _Variety(id: 'var_bourbon',      name: 'Borbón',        sensitivity: 'high',      scaPotential: 86.0),
-    _Variety(id: 'var_caturra',      name: 'Caturra',       sensitivity: 'high',      scaPotential: 85.5),
-    _Variety(id: 'var_castillo',     name: 'Castillo',      sensitivity: 'medium',    scaPotential: 84.0),
-    _Variety(id: 'var_colombia',     name: 'Colombia',      sensitivity: 'medium',    scaPotential: 83.0),
-  ];
-
   static const _processes = [
     ('lavado',           'Lavado'),
     ('natural',          'Natural'),
@@ -84,7 +60,8 @@ class _LotCreateScreenState extends ConsumerState<LotCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(lotCreateProvider);
+    final state     = ref.watch(lotCreateProvider);
+    final varieties = ref.watch(coffeeVarietiesProvider);
 
     ref.listen(lotCreateProvider, (_, next) {
       if (next.hasError) {
@@ -126,7 +103,7 @@ class _LotCreateScreenState extends ConsumerState<LotCreateScreen> {
               key: _formKey,
               child: Column(
                 children: [
-                  _buildVarietySection(),
+                  _buildVarietySection(varieties),
                   const SizedBox(height: 12),
                   _buildEnvironmentSection(),
                   const SizedBox(height: 12),
@@ -167,19 +144,38 @@ class _LotCreateScreenState extends ConsumerState<LotCreateScreen> {
     );
   }
 
-  Widget _buildVarietySection() {
+  Widget _buildVarietySection(AsyncValue<List<CoffeeVariety>> varietiesAsync) {
     return _FormSection(
       title: 'Variedad y ubicación',
       icon: Icons.eco_outlined,
       children: [
-        DropdownButtonFormField<String>(
-          value: _varietyId,
-          decoration: _inputDecor('Variedad'),
-          items: _varieties
-              .map((v) => DropdownMenuItem(value: v.id, child: Text(v.name)))
-              .toList(),
-          onChanged: (val) => setState(() => _varietyId = val!),
-          validator: (v) => v == null ? 'Selecciona una variedad' : null,
+        varietiesAsync.when(
+          loading: () => DropdownButtonFormField<String>(
+            value: null,
+            decoration: _inputDecor('Variedad'),
+            items: const [],
+            onChanged: null,
+          ),
+          error: (_, __) => DropdownButtonFormField<String>(
+            value: null,
+            decoration: _inputDecor('Variedad (error al cargar)'),
+            items: const [],
+            onChanged: null,
+          ),
+          data: (varieties) {
+            final validId = varieties.any((v) => v.id == _varietyId)
+                ? _varietyId
+                : (varieties.isNotEmpty ? varieties.first.id : null);
+            return DropdownButtonFormField<String>(
+              value: validId,
+              decoration: _inputDecor('Variedad'),
+              items: varieties
+                  .map((v) => DropdownMenuItem(value: v.id, child: Text(v.name)))
+                  .toList(),
+              onChanged: (val) => setState(() => _varietyId = val ?? _varietyId),
+              validator: (v) => v == null ? 'Selecciona una variedad' : null,
+            );
+          },
         ),
         const SizedBox(height: 12),
         Row(
@@ -354,10 +350,15 @@ class _LotCreateScreenState extends ConsumerState<LotCreateScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final altitude  = int.parse(_altitudeCtrl.text.trim());
-    final temp      = double.parse(_tempCtrl.text.trim());
-    final humidity  = double.parse(_humidityCtrl.text.trim());
-    final variety   = _varieties.firstWhere((v) => v.id == _varietyId);
+    final altitude     = int.parse(_altitudeCtrl.text.trim());
+    final temp         = double.parse(_tempCtrl.text.trim());
+    final humidity     = double.parse(_humidityCtrl.text.trim());
+    final allVarieties = ref.read(coffeeVarietiesProvider).value ?? const [];
+    final matching     = allVarieties.where((v) => v.id == _varietyId);
+    final variety      = matching.isNotEmpty ? matching.first : null;
+    final varietyName  = variety?.name          ?? _varietyId;
+    final sensitivity  = variety?.sensitivity   ?? 'medium';
+    final scaPotential = variety?.scaPotential  ?? 84.0;
 
     final userId   = ref.read(currentUserIdProvider);
     final roleStr  = ref.read(currentUserProvider)?.role ?? 'farmer';
@@ -373,7 +374,7 @@ class _LotCreateScreenState extends ConsumerState<LotCreateScreen> {
       id:                  lotId,
       userId:              userId,
       varietyId:           _varietyId,
-      varietyName:         variety.name,
+      varietyName:         varietyName,
       altitudeMasl:        altitude,
       region:              _regionCtrl.text.trim(),
       processType:         _processType,
@@ -395,8 +396,8 @@ class _LotCreateScreenState extends ConsumerState<LotCreateScreen> {
       ambientHumidityPct:  humidity,
       rainProbabilityPct:  _rainPct,
       processType:         _processType,
-      varietySensitivity:  variety.sensitivity,
-      varietyScaPotential: variety.scaPotential,
+      varietySensitivity:  sensitivity,
+      varietyScaPotential: scaPotential,
       userLotsCompleted:   ref.read(userLotsProvider).asData?.value.length ?? 0,
     );
 

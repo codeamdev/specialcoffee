@@ -15,7 +15,7 @@ flutter pub get
 dart run build_runner build          # tras cambios en @freezed, Drift tables, @riverpod
 flutter run -d windows
 flutter run -d edge
-flutter test                         # suite completa (baseline: 227 tests)
+flutter test                         # suite completa (baseline: 229 tests)
 flutter test test/ai_engine/washing_rules_test.dart   # test individual
 cd backend && docker compose up auth  # único backend necesario hoy
 .\backend\setup_local.ps1            # solo primera vez con BD vacía
@@ -109,7 +109,7 @@ backend/
 
 ```powershell
 flutter analyze     # cero errores, cero warnings
-flutter test        # todos en verde (≥227)
+flutter test        # todos en verde (≥229)
 dart run build_runner build --delete-conflicting-outputs   # sin conflictos
 ```
 

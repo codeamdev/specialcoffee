@@ -65,10 +65,10 @@ dev_dependencies:
   json_serializable: ^6.8.0
   drift_dev: ^2.21.0
 
-  # Linting -- deshabilitado: custom_lint 0.8.x (analyzer ^8) y riverpod_lint 3.1.1+
-  # (analyzer ^9) son mutuamente incompatibles. Habilitar cuando el ecosistema converja.
-  # custom_lint: ^0.8.1
-  # riverpod_lint: ^3.1.0
+  # Habilitados 2026-05-27: resuelven con custom_lint 0.8.1 + riverpod_lint 3.1.0
+  # y analyzer 8.4.0 (compatible con el ecosistema actual).
+  custom_lint: ^0.8.1
+  riverpod_lint: ^3.0.0
 
 
 flutter:

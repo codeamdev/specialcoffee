@@ -10,6 +10,7 @@ import 'package:special_coffee/core/database/daos/drying_dao.dart';
 import 'package:special_coffee/core/database/daos/fermentation_dao.dart';
 import 'package:special_coffee/core/database/daos/harvest_dao.dart';
 import 'package:special_coffee/core/database/daos/lot_dao.dart';
+import 'package:special_coffee/core/database/daos/varieties_dao.dart';
 import 'package:special_coffee/core/database/daos/washing_dao.dart';
 import 'package:special_coffee/core/database/tables/classification_tables.dart';
 import 'package:special_coffee/core/database/tables/cupping_tables.dart';
@@ -19,6 +20,7 @@ import 'package:special_coffee/core/database/tables/fermentation_tables.dart';
 import 'package:special_coffee/core/database/tables/harvest_tables.dart';
 import 'package:special_coffee/core/database/tables/local_lots_table.dart';
 import 'package:special_coffee/core/database/tables/lots_table.dart';
+import 'package:special_coffee/core/database/tables/varieties_table.dart';
 import 'package:special_coffee/core/database/tables/washing_tables.dart';
 
 part 'app_database.g.dart';
@@ -37,14 +39,18 @@ part 'app_database.g.dart';
     DepulpingSessions,
     CuppingSessions,
     WashingSessions,
+    CoffeeVarietiesCatalog,
   ],
-  daos: [FermentationDao, DryingDao, HarvestDao, ClassificationDao, DepulpingDao, CuppingDao, LotDao, WashingDao],
+  daos: [
+    FermentationDao, DryingDao, HarvestDao, ClassificationDao,
+    DepulpingDao, CuppingDao, LotDao, WashingDao, VarietiesDao,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -68,6 +74,9 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 7) {
             await m.createTable(washingSessions);
+          }
+          if (from < 8) {
+            await m.createTable(coffeeVarietiesCatalog);
           }
         },
       );

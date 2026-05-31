@@ -680,6 +680,12 @@ CREATE TABLE IF NOT EXISTS sync_queue (
   is_synced       BOOLEAN     NOT NULL DEFAULT FALSE
 );
 
+-- sync_queue: accesible solo a authenticated (no anon).
+-- Sin RLS por ahora: la tabla no tiene owner_id; se añadirá en Fase Final
+-- junto con la lógica de sincronización offline (ítem #14 / G-1).
+GRANT SELECT, INSERT, UPDATE ON sync_queue TO authenticated;
+GRANT USAGE ON SEQUENCE sync_queue_id_seq TO authenticated;
+
 -- =============================================================================
 -- ÍNDICES ADICIONALES
 -- =============================================================================
