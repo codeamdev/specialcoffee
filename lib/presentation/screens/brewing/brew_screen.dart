@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:special_coffee/ai_engine/models/ai_context.dart';
+import 'package:special_coffee/core/constants/app_constants.dart';
 import 'package:special_coffee/ai_engine/models/ai_rule.dart';
 import 'package:special_coffee/ai_engine/models/brew_recipe.dart';
 import 'package:special_coffee/core/theme/app_colors.dart';
@@ -874,6 +876,25 @@ class _RecipeCardState extends State<_RecipeCard> {
                 isTopCard: e.$1 == 0,
               )),
         ],
+        const SizedBox(height: 20),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () => context.push(
+              AppRoutes.brewRecipe,
+              extra: <String, dynamic>{},
+            ),
+            icon: const Icon(Icons.save_alt_rounded, size: 18),
+            label: const Text('Registrar sesión de preparación'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.caramel,
+              side: const BorderSide(color: AppColors.caramel),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+        ),
       ]),
     );
   }

@@ -158,7 +158,9 @@ GoRouter appRouter(Ref ref) {
               ),
               GoRoute(
                 path: 'diagnosis',
-                builder: (context, state) => const BrewDiagnosisScreen(),
+                builder: (context, state) => BrewDiagnosisScreen(
+                  params: state.extra as Map<String, dynamic>? ?? {},
+                ),
               ),
             ],
           ),

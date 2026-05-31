@@ -7,7 +7,9 @@ import 'package:special_coffee/data/repositories/drying_repository_local.dart';
 import 'package:special_coffee/data/repositories/fermentation_repository_local.dart';
 import 'package:special_coffee/data/repositories/harvest_repository_local.dart';
 import 'package:special_coffee/data/repositories/lot_repository_local.dart';
+import 'package:special_coffee/data/repositories/brewing_session_repository_local.dart';
 import 'package:special_coffee/data/repositories/washing_repository_local.dart';
+import 'package:special_coffee/domain/repositories/brewing_session_repository.dart';
 import 'package:special_coffee/domain/repositories/classification_repository.dart';
 import 'package:special_coffee/domain/repositories/cupping_repository.dart';
 import 'package:special_coffee/domain/repositories/depulping_repository.dart';
@@ -80,4 +82,11 @@ WashingRepository washingLocalRepo(Ref ref) {
 LotRepository lotLocalRepo(Ref ref) {
   final db = ref.watch(appDatabaseProvider);
   return LotLocalRepository(db.lotDao);
+}
+
+@Riverpod(keepAlive: true)
+BrewingSessionRepository brewingSessionLocalRepo(Ref ref) {
+  final db     = ref.watch(appDatabaseProvider);
+  final userId = ref.watch(currentUserIdProvider);
+  return BrewingSessionLocalRepository(db.brewingSessionDao, userId);
 }
