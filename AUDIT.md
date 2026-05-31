@@ -134,9 +134,9 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
   - `_prettyMethod`: caso `'cold_brew' => 'Cold Brew'` añadido.
 - **Estado**: ✅ Cerrado
 
-### F-2 — BrewDiagnosisScreen / BrewRecipeScreen: dead-code stubs
-- **Hallazgo**: ambas pantallas tienen ~17–19 líneas de stub. La funcionalidad de diagnóstico existe inline en `brew_screen.dart` (`_DiagnosisSection`). No están expuestas en el router.
-- **Estado**: 🟡 Pendiente (no crítico — refactor post-MVP)
+### F-2 — ✅ BrewDiagnosisScreen / BrewRecipeScreen: MVP implementado
+- **Fix** (commit `754543d`, 2026-05-27): stubs reemplazados por pantallas funcionales. `BrewRecipeScreen` muestra receta completa + botón "Iniciar extracción". `BrewDiagnosisScreen` captura TDS/yield/tiempo/notas y persiste `BrewingSession` en Drift (schema v9). Ver `docs/audit/brewing-mvp-scope.md` para decisiones de producto.
+- **Estado**: ✅ Cerrado (FUNC-1)
 
 ---
 
@@ -245,7 +245,7 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | C. Reglas          | C-3               | C-2         | C-4           | —             | C-1          |
 | D. Deudas técnicas | —                 | D-2,D-5,D-6,D-7,D-13,D-14 | — | D-1,D-4,D-9,D-11,D-12 | D-3, D-8, D-15, D-16 |
 | E. Conflictos      | —                 | —           | —             | —             | E-1, E-2     |
-| F. Preparación     | —                 | —           | F-2           | —             | F-1          |
+| F. Preparación     | —                 | —           | —             | —             | F-1, F-2     |
 | G. Persistencia    | —                 | —           | —             | G-1 (=D-12)   | G-2, G-3     |
 | H. Seguridad       | —                 | —           | H-3           | —             | H-1, H-2, H-4, H-5, H-6, H-7 |
 | I. Variedades      | —                 | —           | I-1           | —             | —            |
@@ -268,7 +268,8 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | **Bloque 4** | B-3 | Módulo Trilla (backlog ítem #9) | ⏳ |
 | **Fase final** | D-1,D-4,D-12,D-11 | Android + sync PostgREST — no tocar hasta OK | 🔒 |
 | **Auditoría Pre-Prod T1** | SEC-1…7, QUAL-1, DB-1/2, ARCH-1, TEST-1 | Primera tanda de correcciones del INFORME_AUDITORIA.md | ✅ 2026-05-27 |
-| **Auditoría Pre-Prod T2** | ARCH-2/3, DEVOPS-2, DB-3, QUAL-2 | Segunda tanda de correcciones (pendiente commit) | ⏳ |
+| **Auditoría Pre-Prod T2** | ARCH-2/3, DEVOPS-2, DB-3, QUAL-2 | Segunda tanda de correcciones | ✅ 2026-05-27 (f6f757b) |
+| **Auditoría Pre-Prod T3** | SEC-2/3, DEVOPS-1, FUNC-1 | Dominio producción + Brewing MVP | ✅ 2026-05-27 (9187aab, 754543d) |
 
 ---
 
@@ -289,4 +290,7 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | 2026-05-26 | ef82a51   | B-1/C-1 cerrados — módulo Lavado + expansión Secado + 213 tests ✅      |
 | 2026-05-26 | —         | D-13/D-14 abiertos — umbrales lavado y secado nuevo: deuda de calibración Cenicafé/FNC |
 | 2026-05-27 | —         | INFORME_AUDITORIA.md generado — 9 CRÍTICO, 5 ALTO, 6 MEDIO, 4 BAJO     |
-| 2026-05-27 | pendiente | Auditoría T1: H-3(parcial) H-4 H-5 H-6 H-7 J-4 J-5 G-3 D-15 D-16 cerrados — 227 tests ✅ |
+| 2026-05-27 | e7b4b21   | Auditoría T1: H-3(parcial) H-4 H-5 H-6 H-7 J-4 J-5 G-3 D-15 D-16 cerrados — 227 tests ✅ |
+| 2026-05-27 | f6f757b   | Auditoría T2: ARCH-2 variedades Drift v8, ARCH-3 ConflictResolver, DEVOPS-2 healthchecks, DB-3 GRANTs, QUAL-2 linters — 229 tests ✅ |
+| 2026-05-27 | 9187aab   | Auditoría T3a: SEC-2/3 CORS specialcoffee.app, DEVOPS-1 dart-define, docs/audit/git-history-cleanup.md |
+| 2026-05-27 | 754543d   | Auditoría T3b: FUNC-1 BrewRecipeScreen + BrewDiagnosisScreen MVP, schema v9, 238 tests ✅ |
