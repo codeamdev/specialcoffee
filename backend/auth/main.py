@@ -62,9 +62,12 @@ app = FastAPI(title="SpecialCoffee Auth", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    # Dominio de producción. En desarrollo local, el cliente Flutter corre
+    # en la misma máquina que el servidor — no hay solicitudes cross-origin.
+    allow_origins=["https://specialcoffee.app"],
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "Accept", "Origin"],
+    allow_credentials=False,   # la app usa Bearer token en header, no cookies
     expose_headers=["Content-Range"],
     max_age=600,
 )

@@ -1,6 +1,9 @@
 class ApiConfig {
-  // ── Cambiar a false para producción ──────────────────────────────────────
-  static const bool _local = true;
+  // Inyectado en build time con --dart-define=DEV_MODE=true.
+  // Por defecto false → apunta a producción (specialcoffee.app).
+  // Ver docs/build/dart-define-guide.md para comandos exactos.
+  static const bool _local =
+      bool.fromEnvironment('DEV_MODE', defaultValue: false);
 
   // ── Dev bypass: poner en true si el backend no está corriendo ────────────
   // LOCAL TESTING ONLY — no commitear con true
@@ -9,12 +12,12 @@ class ApiConfig {
   // En local: dos puertos distintos (sin Nginx)
   // En prod:  un solo dominio con Nginx como proxy
   static const String _authBase = _local
-      ? 'http://127.0.0.1:8000'      // FastAPI directo
-      : 'https://TU_DOMINIO';        // Nginx → /auth/ → puerto 8000
+      ? 'http://127.0.0.1:8000'              // FastAPI directo
+      : 'https://specialcoffee.app';         // Nginx → /auth/ → puerto 8000
 
   static const String _pgrstBase = _local
-      ? 'http://127.0.0.1:3001'      // PostgREST directo
-      : 'https://TU_DOMINIO/api';    // Nginx → /api/ → puerto 3000 (strip prefix)
+      ? 'http://127.0.0.1:3001'              // PostgREST directo
+      : 'https://specialcoffee.app/api';     // Nginx → /api/ → puerto 3000 (strip prefix)
 
   // ── Auth endpoints (FastAPI) ──────────────────────────────────────────────
   static const String register = '$_authBase/auth/register';

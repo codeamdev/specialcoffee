@@ -4,7 +4,7 @@
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-build/
+/build/
 *.g.dart
 *.freezed.dart
 
