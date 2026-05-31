@@ -681,6 +681,14 @@ CREATE TABLE IF NOT EXISTS sync_queue (
 );
 
 -- =============================================================================
+-- ÍNDICES ADICIONALES
+-- =============================================================================
+
+-- migration: 0001 — índice en drying_sessions por lot_id
+CREATE INDEX IF NOT EXISTS idx_drying_sessions_lot
+    ON drying_sessions(lot_id, started_at DESC);
+
+-- =============================================================================
 -- GRANTS FINALES
 -- =============================================================================
 

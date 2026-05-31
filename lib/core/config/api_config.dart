@@ -3,6 +3,7 @@ class ApiConfig {
   static const bool _local = true;
 
   // ── Dev bypass: poner en true si el backend no está corriendo ────────────
+  // LOCAL TESTING ONLY — no commitear con true
   static const bool devBypass = false;
 
   // En local: dos puertos distintos (sin Nginx)

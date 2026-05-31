@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:special_coffee/ai_engine/models/ai_context.dart';
 import 'package:special_coffee/ai_engine/models/ai_rule.dart';
@@ -40,6 +41,7 @@ class DryingState {
     this.readings = const [],
     this.recommendations = const [],
     this.isAnalyzing = false,
+    this.error,
   });
 
   final String lotId;
@@ -49,6 +51,7 @@ class DryingState {
   final List<DryingReading> readings;
   final List<Recommendation> recommendations;
   final bool isAnalyzing;
+  final String? error;
 
   bool get hasReadings => readings.isNotEmpty;
   DryingReading? get lastReading => readings.isEmpty ? null : readings.last;
@@ -77,6 +80,7 @@ class DryingState {
     List<DryingReading>? readings,
     List<Recommendation>? recommendations,
     bool? isAnalyzing,
+    String? Function()? error,
   }) =>
       DryingState(
         lotId: lotId,
@@ -88,6 +92,7 @@ class DryingState {
         readings: readings ?? this.readings,
         recommendations: recommendations ?? this.recommendations,
         isAnalyzing: isAnalyzing ?? this.isAnalyzing,
+        error: error != null ? error() : this.error,
       );
 }
 
@@ -125,7 +130,8 @@ class DryingNotifier extends _$DryingNotifier {
           dryingMethod: session.dryingMethod,
           readings: readings,
         );
-      } catch (_) {
+      } catch (e, st) {
+        if (kDebugMode) debugPrint('[DryingProvider] _loadPersistedSession: $e\n$st');
         // Persistence unavailable — start fresh in-memory session
       }
     });
@@ -153,8 +159,9 @@ class DryingNotifier extends _$DryingNotifier {
           sessionId: () => sessionId,
           sessionStartedAt: () => sessionStartedAt,
         );
-      } catch (_) {
-        // Proceed without persistence
+      } catch (e, st) {
+        if (kDebugMode) debugPrint('[DryingProvider] createSession: $e\n$st');
+        state = state.copyWith(error: () => 'No se pudo iniciar la sesión: los datos no se guardarán.');
       }
     }
 
@@ -203,8 +210,9 @@ class DryingNotifier extends _$DryingNotifier {
       final recs = await engine.recommend(aiContext);
       ref.invalidate(geminiStatusProvider);
       state = state.copyWith(recommendations: recs, isAnalyzing: false);
-    } catch (_) {
-      state = state.copyWith(isAnalyzing: false);
+    } catch (e, st) {
+      if (kDebugMode) debugPrint('[DryingProvider] AI recommend: $e\n$st');
+      state = state.copyWith(isAnalyzing: false, error: () => 'Error al obtener recomendaciones de IA.');
     }
 
     // Persist to Drift
@@ -219,7 +227,10 @@ class DryingNotifier extends _$DryingNotifier {
           ambientHumidityPct: ambientHumidityPct,
           uvIndex: uvIndex,
         );
-      } catch (_) {}
+      } catch (e, st) {
+        if (kDebugMode) debugPrint('[DryingProvider] addReading persist: $e\n$st');
+        state = state.copyWith(error: () => 'Lectura no guardada localmente. Revisa el almacenamiento.');
+      }
     }
 
     // Fire moisture notifications and schedule next daily reminder

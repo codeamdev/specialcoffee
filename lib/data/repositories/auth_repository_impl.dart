@@ -10,19 +10,28 @@ class HttpAuthRepository implements AuthRepository {
 
   // ── Dev bypass ─────────────────────────────────────────────────────────────
 
-  static AuthResult _devUser(String email) => AuthResult(
-        accessToken: 'dev_token',
-        refreshToken: 'dev_refresh',
-        user: AuthUser(
-          userId: 'dev-user-001',
-          email: email,
-          displayName: 'Dev User',
-          role: 'farmer',
-          region: 'Huila',
-          country: 'CO',
-          language: 'es',
-        ),
-      );
+  static const _devRoles = {'farmer', 'processor', 'barista', 'entrepreneur'};
+
+  static AuthResult _devUser(String email) {
+    // En devBypass el rol se infiere del prefijo del email:
+    //   farmer@...  → farmer  |  barista@... → barista  |  etc.
+    // Cualquier otro email usa 'farmer' por defecto.
+    final prefix = email.split('@').first.toLowerCase();
+    final role   = _devRoles.contains(prefix) ? prefix : 'farmer';
+    return AuthResult(
+      accessToken:  'dev_token',
+      refreshToken: 'dev_refresh',
+      user: AuthUser(
+        userId:      'dev-$role-001',
+        email:       email,
+        displayName: 'Dev ${role[0].toUpperCase()}${role.substring(1)}',
+        role:        role,
+        region:      'Huila',
+        country:     'CO',
+        language:    'es',
+      ),
+    );
+  }
 
   @override
   Future<AuthResult> register({
@@ -34,7 +43,10 @@ class HttpAuthRepository implements AuthRepository {
     String country  = 'CO',
     String language = 'es',
   }) async {
-    if (ApiConfig.devBypass) return _devUser(email);
+    if (ApiConfig.devBypass) {
+      await _client.saveTokens(accessToken: email, refreshToken: 'dev_refresh');
+      return _devUser(email);
+    }
 
     final response = await _client.post(ApiConfig.register, data: {
       'email':        email,
@@ -54,7 +66,10 @@ class HttpAuthRepository implements AuthRepository {
     required String email,
     required String password,
   }) async {
-    if (ApiConfig.devBypass) return _devUser(email);
+    if (ApiConfig.devBypass) {
+      await _client.saveTokens(accessToken: email, refreshToken: 'dev_refresh');
+      return _devUser(email);
+    }
 
     final response = await _client.post(ApiConfig.login, data: {
       'email':    email,
@@ -79,8 +94,11 @@ class HttpAuthRepository implements AuthRepository {
   @override
   Future<AuthUser?> currentUser() async {
     if (ApiConfig.devBypass) {
-      // En modo dev siempre hay un usuario activo (simula sesión persistida)
-      return _devUser('dev@specialcoffee.app').user;
+      // El email se guardó como access token en login/register (ver devBypass).
+      // Si no hay token guardado (primer arranque sin login), retorna null.
+      final stored = await _client.getAccessToken();
+      if (stored == null || stored.isEmpty) return null;
+      return _devUser(stored).user;
     }
 
     final token = await _client.getAccessToken();

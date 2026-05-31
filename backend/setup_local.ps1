@@ -6,7 +6,25 @@
 
 $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$env:PGPASSWORD = "posgres"
+
+# Leer contraseña de PostgreSQL desde .env (nunca hardcodear aquí)
+$envFile = "$scriptDir\.env"
+if (-not (Test-Path $envFile)) {
+    Write-Error "No se encontró $envFile. Copiar .env.example a .env y rellenar los valores."
+    exit 1
+}
+$envVars = Get-Content $envFile | Where-Object { $_ -match '^\s*[^#]' -and $_ -match '=' }
+foreach ($line in $envVars) {
+    $parts = $line -split '=', 2
+    [System.Environment]::SetEnvironmentVariable($parts[0].Trim(), $parts[1].Trim())
+}
+$env:PGPASSWORD = [System.Environment]::GetEnvironmentVariable('POSTGRES_PASSWORD')
+$pgUser         = [System.Environment]::GetEnvironmentVariable('POSTGRES_USER') ?? 'postgres'
+
+if ([string]::IsNullOrEmpty($env:PGPASSWORD)) {
+    Write-Error "POSTGRES_PASSWORD no está definida en .env"
+    exit 1
+}
 
 Write-Host ""
 Write-Host "==================================================="
@@ -17,10 +35,10 @@ Write-Host "==================================================="
 Write-Host ""
 Write-Host "[1/4] Configurando PostgreSQL..."
 
-$dbExists = & psql -U postgres -tAc "SELECT 1 FROM pg_database WHERE datname='specialcoffee'" postgres 2>$null
+$dbExists = & psql -U $pgUser -tAc "SELECT 1 FROM pg_database WHERE datname='specialcoffee'" postgres 2>$null
 if ($dbExists -ne "1") {
     Write-Host "  Creando base de datos specialcoffee..."
-    & psql -U postgres -c "CREATE DATABASE specialcoffee;" postgres
+    & psql -U $pgUser -c "CREATE DATABASE specialcoffee;" postgres
 } else {
     Write-Host "  Base de datos specialcoffee ya existe."
 }
@@ -42,14 +60,14 @@ GRANT anon, authenticated TO postgres;
 '@ | Out-File -FilePath $rolesSqlPath -Encoding utf8
 
 Write-Host "  Creando roles anon y authenticated..."
-& psql -U postgres -d specialcoffee -f $rolesSqlPath
+& psql -U $pgUser -d specialcoffee -f $rolesSqlPath
 Remove-Item $rolesSqlPath
 
 Write-Host "  Aplicando schema SQL..."
-& psql -U postgres -d specialcoffee -f "$scriptDir\schema.sql"
+& psql -U $pgUser -d specialcoffee -f "$scriptDir\schema.sql"
 
 Write-Host "  Aplicando permisos a roles..."
-& psql -U postgres -d specialcoffee -c "GRANT USAGE ON SCHEMA public TO anon, authenticated; GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated; GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO authenticated;"
+& psql -U $pgUser -d specialcoffee -c "GRANT USAGE ON SCHEMA public TO anon, authenticated; GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated; GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO authenticated;"
 
 Write-Host "  PostgreSQL listo."
 

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:special_coffee/ai_engine/models/ai_context.dart';
 import 'package:special_coffee/ai_engine/models/ai_rule.dart';
@@ -23,6 +24,7 @@ class HarvestState {
     this.passes = const [],
     this.recommendations = const [],
     this.isAnalyzing = false,
+    this.error,
   });
 
   final String lotId;
@@ -33,6 +35,7 @@ class HarvestState {
   final List<HarvestPass> passes;
   final List<Recommendation> recommendations;
   final bool isAnalyzing;
+  final String? error;
 
   bool get hasPasses => passes.isNotEmpty;
   HarvestPass? get lastPass => passes.isEmpty ? null : passes.last;
@@ -49,6 +52,7 @@ class HarvestState {
     List<HarvestPass>? passes,
     List<Recommendation>? recommendations,
     bool? isAnalyzing,
+    String? Function()? error,
   }) =>
       HarvestState(
         lotId: lotId,
@@ -61,6 +65,7 @@ class HarvestState {
         passes: passes ?? this.passes,
         recommendations: recommendations ?? this.recommendations,
         isAnalyzing: isAnalyzing ?? this.isAnalyzing,
+        error: error != null ? error() : this.error,
       );
 }
 
@@ -89,7 +94,8 @@ class HarvestNotifier extends _$HarvestNotifier {
           altitudeMasl: session.altitudeMasl,
           passes: passes,
         );
-      } catch (_) {
+      } catch (e, st) {
+        if (kDebugMode) debugPrint('[HarvestProvider] _loadPersistedSession: $e\n$st');
         // Persistence unavailable — start fresh in-memory session
       }
     });
@@ -131,8 +137,9 @@ class HarvestNotifier extends _$HarvestNotifier {
           varietyId: varietyId,
           altitudeMasl: altitudeMasl,
         );
-      } catch (_) {
-        // Proceed without persistence
+      } catch (e, st) {
+        if (kDebugMode) debugPrint('[HarvestProvider] createSession: $e\n$st');
+        state = state.copyWith(error: () => 'No se pudo iniciar la sesión: los datos no se guardarán.');
       }
     }
 
@@ -196,8 +203,9 @@ class HarvestNotifier extends _$HarvestNotifier {
       final recs = await engine.recommend(aiContext);
       ref.invalidate(geminiStatusProvider);
       state = state.copyWith(recommendations: recs, isAnalyzing: false);
-    } catch (_) {
-      state = state.copyWith(isAnalyzing: false);
+    } catch (e, st) {
+      if (kDebugMode) debugPrint('[HarvestProvider] AI recommend: $e\n$st');
+      state = state.copyWith(isAnalyzing: false, error: () => 'Error al obtener recomendaciones de IA.');
     }
 
     // 3. Persist to Drift
@@ -230,7 +238,10 @@ class HarvestNotifier extends _$HarvestNotifier {
           saved,
         ]..sort((a, b) => a.passNumber.compareTo(b.passNumber));
         state = state.copyWith(passes: persistedPasses);
-      } catch (_) {}
+      } catch (e, st) {
+        if (kDebugMode) debugPrint('[HarvestProvider] addPass persist: $e\n$st');
+        state = state.copyWith(error: () => 'Pase no guardado localmente. Revisa el almacenamiento.');
+      }
     }
 
     // 4. Schedule next-pass reminder
@@ -245,7 +256,9 @@ class HarvestNotifier extends _$HarvestNotifier {
     if (sessionId != null) {
       try {
         await ref.read(harvestLocalRepoProvider).closeSession(sessionId);
-      } catch (_) {}
+      } catch (e, st) {
+        if (kDebugMode) debugPrint('[HarvestProvider] closeSession: $e\n$st');
+      }
     }
     state = HarvestState(lotId: state.lotId);
   }

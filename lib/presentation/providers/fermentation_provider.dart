@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:special_coffee/ai_engine/ai_engine.dart';
 import 'package:special_coffee/core/di/providers.dart';
@@ -19,6 +20,7 @@ class FermentationState {
   final List<Recommendation> recommendations;
   final double? projectedHoursRemaining;
   final bool isAnalyzing;
+  final String? error;
 
   const FermentationState({
     required this.lotId,
@@ -29,6 +31,7 @@ class FermentationState {
     this.recommendations = const [],
     this.projectedHoursRemaining,
     this.isAnalyzing = false,
+    this.error,
   });
 
   bool get hasCriticalAlert =>
@@ -45,6 +48,7 @@ class FermentationState {
     List<Recommendation>? recommendations,
     double? Function()? projectedHoursRemaining,
     bool? isAnalyzing,
+    String? Function()? error,
   }) =>
       FermentationState(
         lotId: lotId,
@@ -57,6 +61,7 @@ class FermentationState {
             ? projectedHoursRemaining()
             : this.projectedHoursRemaining,
         isAnalyzing: isAnalyzing ?? this.isAnalyzing,
+        error: error != null ? error() : this.error,
       );
 }
 
@@ -90,7 +95,8 @@ class FermentationNotifier extends _$FermentationNotifier {
           processType: session.processType,
           readings: aiReadings,
         );
-      } catch (_) {
+      } catch (e, st) {
+        if (kDebugMode) debugPrint('[FermentationProvider] _loadPersistedSession: $e\n$st');
         // Persistence unavailable — start fresh in-memory session
       }
     });
@@ -113,8 +119,9 @@ class FermentationNotifier extends _$FermentationNotifier {
         );
         sessionId = session.id;
         state = state.copyWith(sessionId: () => sessionId);
-      } catch (_) {
-        // Proceed without persistence if DB is unavailable
+      } catch (e, st) {
+        if (kDebugMode) debugPrint('[FermentationProvider] createSession: $e\n$st');
+        state = state.copyWith(error: () => 'No se pudo iniciar la sesión: los datos no se guardarán.');
       }
     }
 
@@ -189,8 +196,9 @@ class FermentationNotifier extends _$FermentationNotifier {
       final recs = await engine.recommend(aiContext);
       ref.invalidate(geminiStatusProvider);
       state = state.copyWith(recommendations: recs, isAnalyzing: false);
-    } catch (_) {
-      state = state.copyWith(isAnalyzing: false);
+    } catch (e, st) {
+      if (kDebugMode) debugPrint('[FermentationProvider] AI recommend: $e\n$st');
+      state = state.copyWith(isAnalyzing: false, error: () => 'Error al obtener recomendaciones de IA.');
     }
 
     // Persist reading to Drift (after AI analysis — fire and track errors silently)
@@ -211,7 +219,10 @@ class FermentationNotifier extends _$FermentationNotifier {
           aiAlertRuleId: alertRuleId,
           aiProjectedEndH: projection,
         );
-      } catch (_) {}
+      } catch (e, st) {
+        if (kDebugMode) debugPrint('[FermentationProvider] addReading persist: $e\n$st');
+        state = state.copyWith(error: () => 'Lectura no guardada localmente. Revisa el almacenamiento.');
+      }
     }
   }
 

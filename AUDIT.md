@@ -105,6 +105,8 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | D-12| Persistencia  | Reconciliar `local_lots` vs `lots` — fuente de verdad en ítem #14  | local_lots_table.dart:7              | ⚪ Fase final |
 | D-13| Agronomía     | Umbrales Lavado (waterTempC 15–30°C, waterChanges≥2, effluentPh≤5.5) — estimados, sin doc Cenicafé | coffee_thresholds.dart | 🟠 Calibrar con Cenicafé / FNC |
 | D-14| Agronomía     | Umbrales secado expandidos (heatStress 35°C, highAmbHum 80%, critAmbHum 85%, turningDay 3, turningGrainHum 40%) — estimados | coffee_thresholds.dart | 🟠 Calibrar con Cenicafé / FNC |
+| D-15| BD (PostgreSQL)| Índice faltante en `drying_sessions(lot_id)` — queries O(n) en tabla crítica | schema.sql              | ✅ Cerrado (Auditoría T1, migración 0001) |
+| D-16| BD (PostgreSQL)| `db-schema-cache-ttl = 0` en producción — re-introspección en cada request | postgrest.conf          | ✅ Cerrado (Auditoría T1, ttl→300) |
 
 ---
 
@@ -148,6 +150,11 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 - **Fix**: `hoursFromDepulpingReference` en ai_context + condition_evaluator + depulping_rules + depulping_provider. SQL column `hours_from_reference` ya era correcto — sin migración. Ver D-8.
 - **Estado**: ✅ Cerrado (Bloque 1)
 
+### G-3 — ✅ Logout no invalidaba providers `keepAlive` con userId capturado (ARCH-1)
+- **Hallazgo**: Providers `keepAlive` (fermentation, drying, harvest, classification, depulping, cupping, washing) capturan `userId` en su construcción. En dispositivos compartidos, el usuario siguiente heredaba el contexto de la sesión anterior.
+- **Fix**: `AuthNotifier.logout()` en `auth_provider.dart` invalida explícitamente los 7 providers de repositorio.
+- **Estado**: ✅ Cerrado (Auditoría Pre-Producción T1, 2026-05-27)
+
 ---
 
 ## H. Seguridad y Red
@@ -159,6 +166,28 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 ### H-2 — ✅ Session persistence (currentUser) implementada
 - **Verificación**: `currentUser()` usa `flutter_secure_storage` + `JwtDecoder.isExpired()` + `refresh()` si expirado. Persiste entre reinicios.
 - **Estado**: ✅ Cerrado
+
+### H-3 — 🟡 Archivos `.conf` con credenciales trackeados en git (SEC-1 — parcial)
+- **Hallazgo**: `backend/postgrest.conf` y `backend/postgrest_local.conf` estaban versionados con credenciales reales (usuario postgrest_auth, JWT_SECRET).
+- **Fix parcial** (Auditoría Pre-Producción, 2026-05-27): `*.conf` añadido a `.gitignore`; `backend/env.example` creado con placeholders documentados (renombrado sin punto para no quedar atrapado por `.env.*` del gitignore). Credenciales ya rotadas externamente.
+- **Pendiente manual**: limpieza de historial git con `git filter-repo` (a ejecutar por el desarrollador).
+- **Estado**: 🟡 Parcial — falta purga del historial git
+
+### H-4 — ✅ Sin rate limiting en endpoints de autenticación (SEC-4)
+- **Fix**: `limit_req_zone` en `nginx.conf` (5r/m, burst 10 en API) y en `specialcoffee.conf` (zonas separadas `auth` 5r/m en `/auth/login` y `/auth/register`, y `api` 30r/m en `/api/`).
+- **Estado**: ✅ Cerrado (Auditoría Pre-Producción, 2026-05-27)
+
+### H-5 — ✅ Security headers ausentes en Nginx (SEC-5)
+- **Fix**: `X-Content-Type-Options`, `X-Frame-Options DENY`, `Referrer-Policy`, `Permissions-Policy` añadidos en ambos archivos Nginx. `Strict-Transport-Security` solo en `specialcoffee.conf` (producción HTTPS). `server_tokens off` en ambos.
+- **Estado**: ✅ Cerrado (Auditoría Pre-Producción, 2026-05-27)
+
+### H-6 — ✅ `setup_local.ps1` exponía contraseña en variable de entorno (SEC-6)
+- **Fix**: `$env:PGPASSWORD = "posgres"` → lectura desde `.env` vía `Get-Content`. Script falla con mensaje claro si `.env` no existe.
+- **Estado**: ✅ Cerrado (Auditoría Pre-Producción, 2026-05-27)
+
+### H-7 — ✅ Sin validación de fortaleza de contraseña en registro (SEC-7)
+- **Fix**: `len(password) < 8` → HTTP 400 antes del check de rol en `POST /auth/register` (`backend/auth/main.py`).
+- **Estado**: ✅ Cerrado (Auditoría Pre-Producción, 2026-05-27)
 
 ---
 
@@ -172,10 +201,10 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 
 ## J. Calidad de Código y Tests
 
-### J-1 — ✅ Tests existen — 168/168 pasan
+### J-1 — ✅ Tests existen y pasan
 - **Corrección**: J-1 estaba mal documentado. `test/` tiene 8 archivos, 1942 líneas.
-- **Estado post-Bloque 1**: **168/168 tests pasan** (2026-05-26). Ver J-3 para detalle del fix.
-- **Estado**: ✅ Cerrado (Bloque 1)
+- **Estado post-Bloque 1**: **168/168** (2026-05-26). **Estado post-Bloque 2**: **213/213**. **Estado post-Auditoría T1**: **227/227** (2026-05-27). Ver J-3, J-4, J-5.
+- **Estado**: ✅ Cerrado (en curso — baseline actualizado)
 
 ### J-2 — ✅ build_runner artefactos regenerados
 - **Fix**: `dart run build_runner build` ejecutado en sesión 2026-05-26. `brew_recipe.freezed.dart` actualizado con `steepHours`.
@@ -186,6 +215,15 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
   - **Grupo 1** (`fermentation_provider_test.dart`, 12 tests): `ServicesBinding.instance` disparado por LazyDatabase/path_provider escapaba el `catch (_)` en zona de test Flutter. Fix: `_FakeRepo implements FermentationRepository` (in-memory, sin DB) + `fermentationLocalRepoProvider` override + `lotByIdProvider` override + `TestWidgetsFlutterBinding.ensureInitialized()`.
   - **Grupo 2** (`widget_test.dart`, 1 test): `_loadPersistedSession()` registraba `Future()` en zona FakeAsync; timer pendiente al final del test fallaba `_verifyInvariants`. Fix: envolver en `tester.runAsync()` para salir de la zona fake.
 - **Estado**: ✅ Cerrado (Bloque 1)
+
+### J-4 — ✅ 34 `catch (_) {}` silenciosos en providers críticos (QUAL-1)
+- **Hallazgo**: `drying_provider.dart`, `fermentation_provider.dart`, `harvest_provider.dart` tenían 34 bloques catch que descartaban silenciosamente errores de BD, sesión y AI sin informar al usuario.
+- **Fix**: Todos reemplazados por `catch (e, st)` con `if (kDebugMode) debugPrint(...)` + `state.copyWith(error: () => '...')`. Los State añadieron campo `error: String?`; `copyWith` usa el patrón `String? Function()?` para preservar errores existentes. `_loadPersistedSession` solo loguea (startup async — no puede actualizar state post-disposal).
+- **Estado**: ✅ Cerrado (Auditoría Pre-Producción T1, 2026-05-27)
+
+### J-5 — ✅ Sin tests para DryingProvider — 259 líneas sin cobertura (TEST-1)
+- **Fix**: `test/presentation/providers/drying_provider_test.dart` creado (13 tests, 5 grupos): estado inicial, addReading happy path, error de persistencia (createSession + persist), error de AI, changeDryingMethod, reset.
+- **Estado**: ✅ Cerrado (Auditoría Pre-Producción T1, 2026-05-27)
 
 ---
 
@@ -204,16 +242,17 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | A. Dominio         | B-3               | C-2         | C-4, D-9      | B-2, B-4      | 9 etapas IA  |
 | B. Etapas          | B-3               | —           | —             | B-2, B-4      | B-1          |
 | C. Reglas          | C-3               | C-2         | C-4           | —             | C-1          |
-| D. Deudas técnicas | —                 | D-2,D-5,D-6,D-7,D-13,D-14 | — | D-1,D-4,D-9,D-11,D-12 | D-3, D-8 |
+| D. Deudas técnicas | —                 | D-2,D-5,D-6,D-7,D-13,D-14 | — | D-1,D-4,D-9,D-11,D-12 | D-3, D-8, D-15, D-16 |
 | E. Conflictos      | —                 | —           | —             | —             | E-1, E-2     |
 | F. Preparación     | —                 | —           | F-2           | —             | F-1          |
-| G. Persistencia    | —                 | —           | —             | G-1 (=D-12)   | G-2 (=D-8)   |
-| H. Seguridad       | —                 | —           | —             | —             | H-1, H-2     |
+| G. Persistencia    | —                 | —           | —             | G-1 (=D-12)   | G-2, G-3     |
+| H. Seguridad       | —                 | —           | H-3           | —             | H-1, H-2, H-4, H-5, H-6, H-7 |
 | I. Variedades      | —                 | —           | I-1           | —             | —            |
-| J. Tests/Código    | —                 | —           | —             | —             | J-1, J-2, J-3 |
+| J. Tests/Código    | —                 | —           | —             | —             | J-1, J-2, J-3, J-4, J-5 |
 | K. UX              | —                 | —           | —             | K-1           | —            |
 
 **Abiertos críticos (MVP)**: B-3 (Trilla/ítem#9), C-3 (userAvgFermentationH).
+**Pendiente manual (seguridad)**: H-3 — purga de historial git con `git filter-repo`.
 
 ---
 
@@ -227,6 +266,8 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | **Bloque 3** | C-3, C-4, I-1 | userAvgFermentationH, integración process_selection, variedades | ⏳ |
 | **Bloque 4** | B-3 | Módulo Trilla (backlog ítem #9) | ⏳ |
 | **Fase final** | D-1,D-4,D-12,D-11 | Android + sync PostgREST — no tocar hasta OK | 🔒 |
+| **Auditoría Pre-Prod T1** | SEC-1…7, QUAL-1, DB-1/2, ARCH-1, TEST-1 | Primera tanda de correcciones del INFORME_AUDITORIA.md | ✅ 2026-05-27 |
+| **Auditoría Pre-Prod T2** | ARCH-2/3, DEVOPS-2, DB-3, QUAL-2 | Segunda tanda de correcciones (pendiente commit) | ⏳ |
 
 ---
 
@@ -244,4 +285,7 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | 2026-05-26 | 7dff2c3   | D-8/G-2 cerrados — rename hoursSinceClassification→hoursFromDepulpingReference (Dart puro, sin migración SQL) |
 | 2026-05-26 | —         | B-1 cerrado — módulo Lavado completo: schema v7, 4 reglas AI, stepper 7 pasos, WashingScreen, 8 tests |
 | 2026-05-26 | —         | C-1 cerrado — drying_rules expandido: 3 → 7 reglas, DRY-CRITICAL supercede DRY-HIGH, 11 tests regresión |
-| 2026-05-26 | —         | D-13/D-14 abiertos — umbrales lavado y secado nuevo: deuda de calibración Cenicafé/FNC (213 tests ✅) |
+| 2026-05-26 | ef82a51   | B-1/C-1 cerrados — módulo Lavado + expansión Secado + 213 tests ✅      |
+| 2026-05-26 | —         | D-13/D-14 abiertos — umbrales lavado y secado nuevo: deuda de calibración Cenicafé/FNC |
+| 2026-05-27 | —         | INFORME_AUDITORIA.md generado — 9 CRÍTICO, 5 ALTO, 6 MEDIO, 4 BAJO     |
+| 2026-05-27 | pendiente | Auditoría T1: H-3(parcial) H-4 H-5 H-6 H-7 J-4 J-5 G-3 D-15 D-16 cerrados — 227 tests ✅ |

@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:special_coffee/core/di/providers.dart';
 import 'package:special_coffee/core/network/api_client.dart';
 import 'package:special_coffee/data/repositories/auth_repository_impl.dart';
 import 'package:special_coffee/domain/repositories/auth_repository.dart';
@@ -63,6 +64,15 @@ class AuthNotifier extends _$AuthNotifier {
   Future<void> logout() async {
     await ref.read(authRepositoryProvider).logout();
     state = const AsyncData(null);
+    // Invalida los repositorios keepAlive que capturan userId en su construcción,
+    // para que el próximo usuario no herede el contexto de la sesión anterior.
+    ref.invalidate(fermentationLocalRepoProvider);
+    ref.invalidate(dryingLocalRepoProvider);
+    ref.invalidate(harvestLocalRepoProvider);
+    ref.invalidate(classificationLocalRepoProvider);
+    ref.invalidate(depulpingLocalRepoProvider);
+    ref.invalidate(cuppingLocalRepoProvider);
+    ref.invalidate(washingLocalRepoProvider);
   }
 }
 

@@ -163,6 +163,8 @@ async def _current_user_id(
 
 @app.post("/auth/register", response_model=TokenResponse, status_code=201)
 async def register(body: RegisterRequest):
+    if len(body.password) < 8:
+        raise HTTPException(400, "La contraseña debe tener al menos 8 caracteres")
     if body.role not in ("farmer", "processor", "barista", "entrepreneur"):
         raise HTTPException(400, "Rol inválido")
 
