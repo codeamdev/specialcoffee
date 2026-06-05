@@ -7,6 +7,7 @@ import 'package:special_coffee/domain/entities/harvest_session.dart';
 import 'package:special_coffee/presentation/providers/harvest_provider.dart';
 import 'package:special_coffee/presentation/widgets/ai/gemini_status_banner.dart';
 import 'package:special_coffee/presentation/widgets/ai/recommendation_card.dart';
+import 'package:special_coffee/presentation/widgets/learning_card.dart';
 
 // ── Screen ─────────────────────────────────────────────────────────────────
 
@@ -149,6 +150,20 @@ class _HarvestScreenState extends ConsumerState<HarvestScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const GeminiStatusBanner(),
+            const SizedBox(height: 12),
+            const LearningCard(
+              title: 'Recolección selectiva',
+              content:
+                  'La recolección de cerezas maduras (≥95% madurez visual) es '
+                  'el primer factor de calidad del café. Un Brix ≥18° indica '
+                  'madurez óptima según estándares SCA.',
+              terms: [
+                ('Brix', 'Grados de concentración de azúcares en la cereza (refractómetro)'),
+                ('Madurez visual', 'Porcentaje de cerezas de color rojo/amarillo respecto al total'),
+              ],
+              tip: 'Recolecta en las primeras horas de la mañana para preservar '
+                  'los azúcares y reducir el calor de campo.',
+            ),
             const SizedBox(height: 12),
 
             // ── Pass history ─────────────────────────────────────────────────

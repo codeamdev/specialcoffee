@@ -8,6 +8,7 @@ import 'package:special_coffee/presentation/providers/fermentation_provider.dart
 import 'package:special_coffee/presentation/widgets/ai/gemini_status_banner.dart';
 import 'package:special_coffee/presentation/widgets/ai/recommendation_card.dart';
 import 'package:special_coffee/presentation/widgets/guides/process_guide_card.dart';
+import 'package:special_coffee/presentation/widgets/learning_card.dart';
 
 // ── Screen ─────────────────────────────────────────────────────────────────
 
@@ -79,6 +80,21 @@ class _FermentationScreenState extends ConsumerState<FermentationScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const GeminiStatusBanner(),
+            const SizedBox(height: 12),
+            const LearningCard(
+              title: 'Fermentación del café',
+              content:
+                  'La fermentación transforma los azúcares del mucílago en '
+                  'ácidos orgánicos que definen el perfil sensorial del café. '
+                  'El pH, la temperatura y el tiempo determinan la calidad final.',
+              terms: [
+                ('Mucílago', 'Capa gelatinosa de azúcares que rodea el grano'),
+                ('pH', 'Escala de acidez: valores menores = más ácido'),
+                ('DTR', 'Tiempo de desarrollo relativo — indica el avance de la fermentación'),
+              ],
+              tip: 'Mantén el pH entre 3.8–5.0 para lavado. '
+                  'Por debajo de 3.5 en anaeróbico hay riesgo crítico de defecto.',
+            ),
             _buildProcessSection(state),
             const SizedBox(height: 12),
             if (state.hasReadings)

@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:special_coffee/ai_engine/core/brew_recipe_generator.dart';
-import 'package:special_coffee/ai_engine/models/ai_context.dart';
 
 import '../helpers/test_context.dart';
 

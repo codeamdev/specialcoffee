@@ -15,10 +15,12 @@ import 'package:special_coffee/presentation/screens/classification/classificatio
 import 'package:special_coffee/presentation/screens/cupping/cupping_screen.dart';
 import 'package:special_coffee/presentation/screens/depulping/depulping_screen.dart';
 import 'package:special_coffee/presentation/screens/harvest/harvest_screen.dart';
+import 'package:special_coffee/presentation/screens/milling/milling_screen.dart';
 import 'package:special_coffee/presentation/screens/washing/washing_screen.dart';
 import 'package:special_coffee/presentation/screens/lot/lot_create_screen.dart';
 import 'package:special_coffee/presentation/screens/lot/lot_detail_screen.dart';
 import 'package:special_coffee/presentation/screens/lot/lot_list_screen.dart';
+import 'package:special_coffee/presentation/screens/admin/admin_screen.dart';
 import 'package:special_coffee/presentation/screens/profile/profile_screen.dart';
 import 'package:special_coffee/presentation/screens/shell/main_shell.dart';
 import 'package:special_coffee/presentation/providers/auth_provider.dart';
@@ -53,6 +55,13 @@ GoRouter appRouter(Ref ref) {
       if (isSplash) return null;
       if (!isAuthenticated && !isAuthRoute) return AppRoutes.login;
       if (isAuthenticated && isAuthRoute) return AppRoutes.home;
+
+      // Guard: /admin is restricted to role 'admin'
+      if (state.matchedLocation == AppRoutes.admin) {
+        final user = ref.read(authProvider).value;
+        if (user == null || user.role != 'admin') return AppRoutes.home;
+      }
+
       return null;
     },
     routes: [
@@ -134,6 +143,12 @@ GoRouter appRouter(Ref ref) {
                     ),
                   ),
                   GoRoute(
+                    path: 'milling',
+                    builder: (context, state) => MillingScreen(
+                      lotId: state.pathParameters['id']!,
+                    ),
+                  ),
+                  GoRoute(
                     path: 'cupping',
                     builder: (context, state) => CuppingScreen(
                       lotId: state.pathParameters['id']!,
@@ -170,6 +185,10 @@ GoRouter appRouter(Ref ref) {
               const ProfileScreen(),
               state,
             ),
+          ),
+          GoRoute(
+            path: AppRoutes.admin,
+            builder: (context, state) => const AdminScreen(),
           ),
         ],
       ),
