@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:special_coffee/core/database/daos/batch_insights_dao.dart';
+import 'package:special_coffee/core/database/daos/lot_stage_log_dao.dart';
 import 'package:special_coffee/core/database/daos/brew_session_detail_dao.dart';
 import 'package:special_coffee/core/database/daos/brewing_session_dao.dart';
 import 'package:special_coffee/core/database/daos/classification_dao.dart';
@@ -19,6 +20,7 @@ import 'package:special_coffee/core/database/daos/varieties_dao.dart';
 import 'package:special_coffee/core/database/daos/washing_dao.dart';
 import 'package:special_coffee/core/database/daos/water_profile_dao.dart';
 import 'package:special_coffee/core/database/tables/batch_insights_table.dart';
+import 'package:special_coffee/core/database/tables/lot_stage_log_table.dart';
 import 'package:special_coffee/core/database/tables/brew_session_details_table.dart';
 import 'package:special_coffee/core/database/tables/brewing_sessions_table.dart';
 import 'package:special_coffee/core/database/tables/classification_tables.dart';
@@ -58,19 +60,21 @@ part 'app_database.g.dart';
     CoffeeReferences,
     WaterProfiles,
     BrewSessionDetails,
+    LotStageLogs,
   ],
   daos: [
     FermentationDao, DryingDao, HarvestDao, ClassificationDao,
     DepulpingDao, CuppingDao, LotDao, WashingDao, VarietiesDao,
     BrewingSessionDao, MillingDao, BatchInsightsDao,
     CoffeeReferenceDao, WaterProfileDao, BrewSessionDetailDao,
+    LotStageLogDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -111,6 +115,9 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(coffeeReferences);
             await m.createTable(waterProfiles);
             await m.createTable(brewSessionDetails);
+          }
+          if (from < 13) {
+            await m.createTable(lotStageLogs);
           }
         },
       );

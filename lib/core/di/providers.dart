@@ -10,10 +10,12 @@ import 'package:special_coffee/data/repositories/lot_repository_local.dart';
 import 'package:special_coffee/data/repositories/batch_insights_repository_local.dart';
 import 'package:special_coffee/data/repositories/brew_session_detail_repository_local.dart';
 import 'package:special_coffee/data/repositories/coffee_reference_repository_local.dart';
+import 'package:special_coffee/data/repositories/lot_stage_log_repository_local.dart';
 import 'package:special_coffee/data/repositories/water_profile_repository_local.dart';
 import 'package:special_coffee/data/sync/sync_data_source.dart';
 import 'package:special_coffee/domain/repositories/brew_session_detail_repository.dart';
 import 'package:special_coffee/domain/repositories/coffee_reference_repository.dart';
+import 'package:special_coffee/domain/repositories/lot_stage_log_repository.dart';
 import 'package:special_coffee/domain/repositories/water_profile_repository.dart';
 import 'package:special_coffee/data/sync/sync_service.dart';
 import 'package:special_coffee/data/repositories/brewing_session_repository_local.dart';
@@ -134,6 +136,12 @@ WaterProfileRepository waterProfileLocalRepo(Ref ref) {
 BrewSessionDetailRepository brewSessionDetailLocalRepo(Ref ref) {
   final db = ref.watch(appDatabaseProvider);
   return BrewSessionDetailLocalRepository(db.brewSessionDetailDao);
+}
+
+@Riverpod(keepAlive: true)
+LotStageLogRepository lotStageLogLocalRepo(Ref ref) {
+  final db = ref.watch(appDatabaseProvider);
+  return LotStageLogLocalRepository(db);
 }
 
 @Riverpod(keepAlive: true)
