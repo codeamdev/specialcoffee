@@ -197,6 +197,49 @@ class NotificationService {
 
   // ── Cancel ────────────────────────────────────────────────────────────────
 
+  // ── Workflow stage timers ─────────────────────────────────────────────────
+  // ID range: 6000–6999 stage-end reminders | 7000–7999 overdue alerts
+
+  /// Schedules a reminder 15 min before stage end + an overdue alert 2h after.
+  Future<void> scheduleStageTimers({
+    required String   lotId,
+    required String   stageLabel,
+    required DateTime expectedEnd,
+  }) async {
+    if (!_ready) return;
+    final base = lotId.hashCode.abs();
+    final remId    = 6000 + (base % 999);
+    final overdueId = 7000 + (base % 999);
+
+    await _cancelById(remId);
+    await _cancelById(overdueId);
+
+    final endReminder = expectedEnd.subtract(const Duration(minutes: 15));
+    if (endReminder.isAfter(DateTime.now())) {
+      await _schedule(
+        id:          remId,
+        title:       '$stageLabel termina pronto',
+        body:        '$stageLabel termina en 15 minutos — revisa los parámetros.',
+        scheduledAt: tz.TZDateTime.from(endReminder, tz.local),
+      );
+    }
+
+    final overdueTime = expectedEnd.add(const Duration(hours: 2));
+    await _schedule(
+      id:          overdueId,
+      title:       '$stageLabel vencida',
+      body:        '$stageLabel superó el tiempo esperado hace 2h — actúa ahora.',
+      scheduledAt: tz.TZDateTime.from(overdueTime, tz.local),
+    );
+  }
+
+  Future<void> cancelStageTimers(String lotId) async {
+    if (!_ready) return;
+    final base = lotId.hashCode.abs();
+    await _cancelById(6000 + (base % 999));
+    await _cancelById(7000 + (base % 999));
+  }
+
   Future<void> cancelAllForLot(String lotId) async {
     if (!_ready) return;
     final base = lotId.hashCode.abs();
