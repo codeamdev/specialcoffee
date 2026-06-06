@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:special_coffee/ai_engine/core/process_completion_analyzer.dart';
 import 'package:special_coffee/ai_engine/models/ai_context.dart';
 import 'package:special_coffee/ai_engine/models/ai_rule.dart';
 import 'package:special_coffee/core/di/providers.dart';
@@ -6,6 +7,7 @@ import 'package:special_coffee/domain/entities/cupping_session.dart';
 import 'package:special_coffee/presentation/providers/ai_engine_provider.dart';
 import 'package:special_coffee/presentation/providers/auth_provider.dart';
 import 'package:special_coffee/presentation/providers/lot_provider.dart';
+import 'package:special_coffee/presentation/providers/lot_summary_provider.dart';
 
 part 'cupping_provider.g.dart';
 
@@ -201,6 +203,30 @@ class CuppingNotifier extends _$CuppingNotifier {
           createdAt:        now,
         ),
       );
+
+      // Detailed process analysis from stage logs (E4)
+      if (totalScore > 0) {
+        final stages = await ref.read(lotStageLogLocalRepoProvider).getByLotId(state.lotId);
+        final db     = ref.read(appDatabaseProvider);
+        await ProcessCompletionAnalyzer(db.batchInsightsDao).analyze(
+          lotId:    state.lotId,
+          ownerId:  userId,
+          stages:   stages,
+          scaScore: totalScore,
+        );
+      }
+
+      // Generate lot insight and persist to batch_insights
+      final fermSession = await ref
+          .read(appDatabaseProvider)
+          .fermentationDao
+          .getLatestSession(state.lotId);
+      ref.read(lotSummaryProvider.notifier).generateAndSave(
+            lotId:        state.lotId,
+            scaScore:     totalScore,
+            fermentationH: fermSession?.actualDurationH,
+            phFinal:       fermSession?.phFinal,
+          );
 
       // Trigger learning cycle: stats recompute on next read
       ref.invalidate(userStatsProvider(userId));
