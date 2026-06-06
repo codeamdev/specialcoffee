@@ -3,7 +3,20 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'ai_context.freezed.dart';
 part 'ai_context.g.dart';
 
-enum UserRole { farmer, processor, barista, entrepreneur }
+/// Roles del sistema. Los tokens JWT viejos pueden enviar 'farmer'|'processor'|'entrepreneur';
+/// usar [roleFromString] para mapearlos — nunca leer .name del backend directamente.
+enum UserRole { producer, coffeeMaster, brandManager, producerIntegral, barista, admin }
+
+/// Mapeo backward-compatible: backend viejos → enum nuevo.
+UserRole roleFromString(String s) => switch (s) {
+  'farmer' || 'processor'    => UserRole.producer,
+  'coffee_master'            => UserRole.coffeeMaster,
+  'brand_manager'            => UserRole.brandManager,
+  'producer_integral'        => UserRole.producerIntegral,
+  'barista'                  => UserRole.barista,
+  'admin'                    => UserRole.admin,
+  _                          => UserRole.producer,
+};
 
 @freezed
 abstract class AIContext with _$AIContext {

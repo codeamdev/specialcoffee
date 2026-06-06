@@ -20,9 +20,10 @@ const _tabBrew         = _Tab(Icons.coffee_outlined,      Icons.coffee,      'Pr
 const _tabProfile      = _Tab(Icons.person_outline,       Icons.person,      'Perfil',   AppRoutes.profile);
 
 List<_Tab> _tabsFor(String role) => switch (role) {
-  'barista'      => [_tabBaristaHome, _tabBrew, _tabProfile],
-  'entrepreneur' => [_tabHome, _tabLots, _tabBrew, _tabProfile],
-  _              => [_tabHome, _tabLots, _tabProfile], // farmer, processor
+  'barista'                          => [_tabBaristaHome, _tabBrew, _tabProfile],
+  'brand_manager' || 'entrepreneur'  => [_tabHome, _tabLots, _tabBrew, _tabProfile],
+  'coffee_master' || 'producer_integral' => [_tabHome, _tabLots, _tabBrew, _tabProfile],
+  _                                  => [_tabHome, _tabLots, _tabProfile], // producer + legacy
 };
 
 class MainShell extends ConsumerWidget {
@@ -32,7 +33,7 @@ class MainShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final role     = ref.watch(currentUserProvider)?.role ?? 'farmer';
+    final role     = ref.watch(currentUserProvider)?.role ?? 'producer';
     final tabs     = _tabsFor(role);
     final location = GoRouterState.of(context).matchedLocation;
     final index    = _indexOf(location, tabs);

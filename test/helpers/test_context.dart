@@ -5,7 +5,7 @@ import 'package:special_coffee/ai_engine/models/ai_rule.dart';
 /// Override only the fields relevant to the test case.
 AIContext ctx({
   String userId = 'u_test',
-  UserRole role = UserRole.processor,
+  UserRole role = UserRole.producer,
   String module = 'fermentation',
   String varietyId = 'var_castillo',
   int altitudeMasl = 1650,

@@ -71,6 +71,13 @@ GoRouter appRouter(Ref ref) {
         if (user?.role == 'barista') return AppRoutes.baristaHome;
       }
 
+      // Guard: /brew is barista + coffee_master + producer_integral only
+      if (state.matchedLocation.startsWith(AppRoutes.brew)) {
+        final user = ref.read(authProvider).value;
+        const brewRoles = {'barista', 'coffee_master', 'producer_integral', 'producer', 'farmer', 'processor'};
+        if (user != null && !brewRoles.contains(user.role)) return AppRoutes.home;
+      }
+
       return null;
     },
     routes: [

@@ -24,10 +24,11 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   static const _roles = [
-    _Role('farmer',       'Agricultor',  'Cultivo y cosecha de café',         Icons.grass_outlined),
-    _Role('processor',    'Procesador',  'Fermentación y secado',              Icons.science_outlined),
-    _Role('barista',      'Barista',     'Preparación y cata',                 Icons.local_cafe_outlined),
-    _Role('entrepreneur', 'Empresario',  'Gestión y comercialización',         Icons.business_outlined),
+    _Role('producer',          'Productor',       'Cultivo, proceso y trilla de café',     Icons.grass_outlined),
+    _Role('coffee_master',     'Coffee Master',   'Análisis físico, tueste y catación SCA', Icons.science_outlined),
+    _Role('brand_manager',     'Brand Manager',   'Inventario, precios y certificaciones', Icons.business_outlined),
+    _Role('producer_integral', 'Prod. Integral',  'Control farm-to-cup completo',          Icons.agriculture_outlined),
+    _Role('barista',           'Barista',         'Preparación y experiencia en taza',     Icons.local_cafe_outlined),
   ];
 
   final _formKey   = GlobalKey<FormState>();

@@ -9,9 +9,10 @@ class ExplanationBuilder {
     required AIContext context,
     required double confidence,
   }) {
-    final roleKey = context.userRole.name;
+    final roleKey  = context.userRole.name;
+    final legacyKey = _legacyRoleKey(context.userRole);
     final template = rule.outcome.explanationByRole[roleKey]
-        ?? rule.outcome.explanationByRole['processor']
+        ?? rule.outcome.explanationByRole[legacyKey]
         ?? rule.outcome.explanationByRole.values.first;
 
     // Calcular valor derivado de bloom para la plantilla
@@ -43,13 +44,23 @@ class ExplanationBuilder {
         .replaceAll('{boiling_point}',           boilingPoint);
 
     // Advertencia de baja confianza — solo para roles técnicos
-    if (confidence < 0.75 && context.userRole != UserRole.farmer) {
+    if (confidence < 0.75 && context.userRole != UserRole.producer) {
       text += '\n(Confianza: ${(confidence * 100).round()}% — '
           'algunos datos no fueron medidos directamente)';
     }
 
     return text;
   }
+
+  // Maps new roles to the legacy key used in existing rules' explanationByRole maps.
+  String _legacyRoleKey(UserRole role) => switch (role) {
+    UserRole.producer         => 'farmer',
+    UserRole.coffeeMaster     => 'processor',
+    UserRole.producerIntegral => 'processor',
+    UserRole.brandManager     => 'farmer',
+    UserRole.barista          => 'barista',
+    UserRole.admin            => 'farmer',
+  };
 
   String _prettyVariety(String id) => switch (id) {
     'var_geisha'   => 'Geisha',

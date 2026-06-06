@@ -187,11 +187,11 @@ void main() {
       );
     });
 
-    test('user_role accessor: processor → true', () {
+    test('user_role accessor: producer → true', () {
       expect(
         evaluator.evaluate(
-          strCond('user_role', ConditionOperator.eq, 'processor'),
-          ctx(role: UserRole.processor),
+          strCond('user_role', ConditionOperator.eq, 'producer'),
+          ctx(role: UserRole.producer),
         ),
         isTrue,
       );

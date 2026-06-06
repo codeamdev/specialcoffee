@@ -12,6 +12,7 @@ import 'package:special_coffee/presentation/providers/auth_provider.dart';
 import 'package:special_coffee/presentation/providers/lot_provider.dart';
 import 'package:special_coffee/domain/entities/coffee_variety.dart';
 import 'package:special_coffee/presentation/providers/varieties_provider.dart';
+import 'package:special_coffee/presentation/providers/weather_provider.dart';
 import 'package:special_coffee/presentation/widgets/ai/gemini_status_banner.dart';
 import 'package:special_coffee/presentation/widgets/ai/recommendation_card.dart';
 import 'package:special_coffee/presentation/widgets/guides/process_guide_card.dart';
@@ -41,10 +42,51 @@ class _LotCreateScreenState extends ConsumerState<LotCreateScreen> {
   final _tempCtrl       = TextEditingController(text: '20.0');
   final _humidityCtrl   = TextEditingController(text: '75.0');
 
-  String  _varietyId     = 'var_castillo';
-  double  _rainPct       = 10.0;
-  String  _processType   = 'lavado';
+  String  _varietyId        = 'var_castillo';
+  double  _rainPct          = 10.0;
+  String  _processType      = 'lavado';
   String? _createdLotId;
+  bool    _weatherAutoFilled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchGpsAndWeather();
+  }
+
+  Future<void> _fetchGpsAndWeather() async {
+    double? lat, lng;
+    try {
+      final gps = await ref.read(currentGpsPositionProvider.future);
+      if (gps != null && mounted) {
+        lat = gps.latitude;
+        lng = gps.longitude;
+        setState(() =>
+            _altitudeCtrl.text = gps.altitudeMeters.round().toString());
+      }
+    } catch (_) {}
+
+    if (lat == null || lng == null) return;
+    try {
+      final weather = await ref
+          .read(weatherProvider.notifier)
+          .fetchForLocation(lat: lat, lng: lng);
+      if (weather != null && mounted) {
+        setState(() {
+          if (weather.ambientTempC != null) {
+            _tempCtrl.text = weather.ambientTempC!.toStringAsFixed(1);
+          }
+          if (weather.ambientHumidityPct != null) {
+            _humidityCtrl.text = weather.ambientHumidityPct!.toStringAsFixed(1);
+          }
+          if (weather.rainProbabilityPct != null) {
+            _rainPct = weather.rainProbabilityPct!.clamp(0.0, 100.0);
+          }
+          _weatherAutoFilled = true;
+        });
+      }
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
@@ -217,6 +259,22 @@ class _LotCreateScreenState extends ConsumerState<LotCreateScreen> {
       title: 'Condiciones ambientales',
       icon: Icons.thermostat_outlined,
       children: [
+        if (_weatherAutoFilled)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                const Icon(Icons.cloud_done_outlined,
+                    size: 14, color: AppColors.aiBlue),
+                const SizedBox(width: 4),
+                Text(
+                  'Datos obtenidos automáticamente — puedes editarlos',
+                  style: AppTextStyles.labelSmall
+                      .copyWith(color: AppColors.aiBlue),
+                ),
+              ],
+            ),
+          ),
         Row(
           children: [
             Expanded(
@@ -361,11 +419,8 @@ class _LotCreateScreenState extends ConsumerState<LotCreateScreen> {
     final scaPotential = variety?.scaPotential  ?? 84.0;
 
     final userId   = ref.read(currentUserIdProvider);
-    final roleStr  = ref.read(currentUserProvider)?.role ?? 'farmer';
-    final userRole = UserRole.values.firstWhere(
-      (r) => r.name == roleStr,
-      orElse: () => UserRole.farmer,
-    );
+    final roleStr  = ref.read(currentUserProvider)?.role ?? 'producer';
+    final userRole = roleFromString(roleStr);
 
     final lotId = const Uuid().v4();
     setState(() => _createdLotId = lotId);

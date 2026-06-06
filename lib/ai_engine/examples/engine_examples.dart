@@ -45,7 +45,7 @@ Future<void> _example1_processSelection(RuleEngine engine) async {
 
   final context = const AIContext(
     userId: 'user_001',
-    userRole: UserRole.processor,
+    userRole: UserRole.producer,
     module: 'process_selection',
     varietyId: 'var_geisha',
     altitudeMasl: 1920,
@@ -100,7 +100,7 @@ Future<void> _example2_fermentationCritical(
   // RuleEngine — contexto completo
   final context = const AIContext(
     userId: 'user_001',
-    userRole: UserRole.farmer,
+    userRole: UserRole.producer,
     module: 'fermentation',
     varietyId: 'var_castillo',
     altitudeMasl: 1650,

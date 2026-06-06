@@ -9,6 +9,7 @@ import 'package:special_coffee/core/theme/app_colors.dart';
 import 'package:special_coffee/core/theme/app_text_styles.dart';
 import 'package:special_coffee/presentation/providers/auth_provider.dart';
 import 'package:special_coffee/presentation/providers/brew_provider.dart';
+import 'package:special_coffee/presentation/providers/brewing_history_provider.dart';
 import 'package:special_coffee/presentation/widgets/ai/recommendation_card.dart';
 
 // ── Method data (screen-private) ──────────────────────────────────────────
@@ -79,6 +80,8 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
   final _tdsResultCtrl  = TextEditingController();
   final _yieldResultCtrl= TextEditingController();
 
+  bool _tdsPrefilledFromHistory = false;
+
   // Coffee reference (optional, shown as summary after saving)
   String? _coffeeRefName;
   String? _coffeeRefFarm;
@@ -101,7 +104,20 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(brewProvider);
+    final state  = ref.watch(brewProvider);
+    final userId = ref.read(currentUserIdProvider);
+
+    // Pre-populate TDS controllers from session history when ≥5 sessions exist.
+    // Only runs once — user edits after that are not overwritten.
+    ref.listen<AsyncValue<BrewingTdsPrefs>>(brewingTdsPrefsProvider(userId), (_, next) {
+      if (_tdsPrefilledFromHistory) return;
+      final prefs = next.value;
+      if (prefs != null && prefs.hasEnoughData) {
+        _tdsMinCtrl.text = prefs.tdsMin.toStringAsFixed(2);
+        _tdsMaxCtrl.text = prefs.tdsMax.toStringAsFixed(2);
+        _tdsPrefilledFromHistory = true;
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -505,12 +521,9 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final userId  = ref.read(currentUserIdProvider);
-    final roleStr = ref.read(currentUserProvider)?.role ?? 'farmer';
+    final roleStr = ref.read(currentUserProvider)?.role ?? 'producer';
     final region  = ref.read(currentUserProvider)?.region ?? '';
-    final userRole = UserRole.values.firstWhere(
-      (r) => r.name == roleStr,
-      orElse: () => UserRole.farmer,
-    );
+    final userRole = roleFromString(roleStr);
 
     final ctx = AIContext(
       userId:              userId,

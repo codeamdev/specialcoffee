@@ -131,11 +131,8 @@ class DepulpingNotifier extends _$DepulpingNotifier {
     try {
       final lot     = await ref.read(lotByIdProvider(state.lotId).future);
       final userId  = ref.read(currentUserIdProvider);
-      final roleStr = ref.read(currentUserProvider)?.role ?? 'farmer';
-      final userRole = UserRole.values.firstWhere(
-        (r) => r.name == roleStr,
-        orElse: () => UserRole.farmer,
-      );
+      final roleStr = ref.read(currentUserProvider)?.role ?? 'producer';
+      final userRole = roleFromString(roleStr);
 
       final hoursElapsed = state.referenceTime != null
           ? depulpedAt.difference(state.referenceTime!).inMinutes / 60.0

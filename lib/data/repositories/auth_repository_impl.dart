@@ -1,6 +1,7 @@
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:special_coffee/core/config/api_config.dart';
 import 'package:special_coffee/core/network/api_client.dart';
+import 'package:special_coffee/core/notifications/fcm_service.dart';
 import 'package:special_coffee/domain/repositories/auth_repository.dart';
 
 class HttpAuthRepository implements AuthRepository {
@@ -10,14 +11,18 @@ class HttpAuthRepository implements AuthRepository {
 
   // ── Dev bypass ─────────────────────────────────────────────────────────────
 
-  static const _devRoles = {'farmer', 'processor', 'barista', 'entrepreneur'};
+  static const _devRoles = {
+    'producer', 'coffee_master', 'brand_manager', 'producer_integral', 'barista', 'admin',
+    // legacy tokens backward compat
+    'farmer', 'processor', 'entrepreneur',
+  };
 
   static AuthResult _devUser(String email) {
     // En devBypass el rol se infiere del prefijo del email:
     //   farmer@...  → farmer  |  barista@... → barista  |  etc.
     // Cualquier otro email usa 'farmer' por defecto.
     final prefix = email.split('@').first.toLowerCase();
-    final role   = _devRoles.contains(prefix) ? prefix : 'farmer';
+    final role   = _devRoles.contains(prefix) ? prefix : 'producer';
     return AuthResult(
       accessToken:  'dev_token',
       refreshToken: 'dev_refresh',
@@ -117,7 +122,7 @@ class HttpAuthRepository implements AuthRepository {
         userId:      claims['sub']          as String,
         email:       claims['email']        as String,
         displayName: (claims['display_name'] as String?) ?? '',
-        role:        (claims['app_role']    as String?) ?? 'farmer',
+        role:        (claims['app_role']    as String?) ?? 'producer',
         region:      (claims['region']      as String?) ?? '',
         country:     (claims['country']     as String?) ?? 'CO',
         language:    (claims['language']    as String?) ?? 'es',
@@ -130,6 +135,29 @@ class HttpAuthRepository implements AuthRepository {
 
   @override
   Future<void> logout() => _client.clearTokens();
+
+  @override
+  Future<void> registerDevice(String playerId) async {
+    if (ApiConfig.devBypass) return;
+    try {
+      await _client.patch(
+        ApiConfig.registerDevice,
+        data: {'player_id': playerId},
+      );
+    } catch (_) {
+      // Fire-and-forget — si falla no interrumpimos la sesión del usuario
+    }
+  }
+
+  @override
+  Future<void> registerFcmToken(String token) async {
+    if (ApiConfig.devBypass || token.isEmpty) return;
+    try {
+      await _client.post(ApiConfig.fcmToken, data: {'token': token});
+    } catch (_) {
+      // Fire-and-forget — si falla no interrumpimos la sesión del usuario
+    }
+  }
 
   @override
   bool get isLoggedIn {
@@ -148,6 +176,11 @@ class HttpAuthRepository implements AuthRepository {
       accessToken:  accessToken,
       refreshToken: refreshToken,
     );
+
+    // Sincronizar FCM token con el backend — fire-and-forget, non-blocking.
+    // setTokenSyncCallback también dispara el envío inmediato si el token ya
+    // está disponible, y lo reenvía en cada rotación de token.
+    FcmService.instance.setTokenSyncCallback(registerFcmToken);
 
     final user = AuthUser(
       userId:      data['user_id']      as String,

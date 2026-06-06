@@ -139,11 +139,8 @@ class CuppingNotifier extends _$CuppingNotifier {
 
       final lot      = await ref.read(lotByIdProvider(state.lotId).future);
       final userId   = ref.read(currentUserIdProvider);
-      final roleStr  = ref.read(currentUserProvider)?.role ?? 'farmer';
-      final userRole = UserRole.values.firstWhere(
-        (r) => r.name == roleStr,
-        orElse: () => UserRole.farmer,
-      );
+      final roleStr  = ref.read(currentUserProvider)?.role ?? 'producer';
+      final userRole = roleFromString(roleStr);
 
       // Historical stats — passed as 0 when unreliable (n < 3) so engine
       // personalisation rules don't fire on noisy data.

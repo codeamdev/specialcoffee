@@ -181,11 +181,8 @@ class DryingNotifier extends _$DryingNotifier {
 
     try {
       final userId = ref.read(currentUserIdProvider);
-      final roleStr = ref.read(currentUserProvider)?.role ?? 'farmer';
-      final userRole = UserRole.values.firstWhere(
-        (r) => r.name == roleStr,
-        orElse: () => UserRole.farmer,
-      );
+      final roleStr = ref.read(currentUserProvider)?.role ?? 'producer';
+      final userRole = roleFromString(roleStr);
       final lot = await ref.read(lotByIdProvider(state.lotId).future);
 
       final aiContext = AIContext(
@@ -227,6 +224,8 @@ class DryingNotifier extends _$DryingNotifier {
           ambientHumidityPct: ambientHumidityPct,
           uvIndex: uvIndex,
         );
+        // Sync to backend in background — never awaited, never blocks UI
+        ref.read(syncServiceProvider).syncPendingReadings();
       } catch (e, st) {
         if (kDebugMode) debugPrint('[DryingProvider] addReading persist: $e\n$st');
         state = state.copyWith(error: () => 'Lectura no guardada localmente. Revisa el almacenamiento.');

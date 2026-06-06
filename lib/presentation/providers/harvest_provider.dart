@@ -172,11 +172,8 @@ class HarvestNotifier extends _$HarvestNotifier {
     // 2. Run AI analysis
     try {
       final userId = ref.read(currentUserIdProvider);
-      final roleStr = ref.read(currentUserProvider)?.role ?? 'farmer';
-      final userRole = UserRole.values.firstWhere(
-        (r) => r.name == roleStr,
-        orElse: () => UserRole.farmer,
-      );
+      final roleStr = ref.read(currentUserProvider)?.role ?? 'producer';
+      final userRole = roleFromString(roleStr);
 
       // cherry_color_pct = ripe % when ripeness data available, else 100 (neutral)
       final cherryColorPct = ripenessRipePct != null

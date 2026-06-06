@@ -227,10 +227,12 @@ Analiza el contexto general y proporciona las recomendaciones más relevantes pa
   // ── Helpers de etiquetas ─────────────────────────────────────────────────
 
   static String _roleLabel(UserRole role) => switch (role) {
-        UserRole.farmer       => 'Caficultor / Productor (lenguaje práctico, sin tecnicismos)',
-        UserRole.processor    => 'Procesador de café (lenguaje técnico-agronómico)',
-        UserRole.barista      => 'Barista / Preparador (lenguaje técnico de preparación)',
-        UserRole.entrepreneur => 'Empresario cafetero (lenguaje de negocio + calidad)',
+        UserRole.producer         => 'Productor de café (lenguaje práctico, enfoque en campo y proceso)',
+        UserRole.coffeeMaster     => 'Coffee Master / Q Grader (lenguaje técnico de análisis físico y tueste)',
+        UserRole.brandManager     => 'Brand Manager / Empresario cafetero (lenguaje de negocio + calidad)',
+        UserRole.producerIntegral => 'Productor Integral (control farm-to-cup: campo + análisis + tueste)',
+        UserRole.barista          => 'Barista / Preparador (lenguaje técnico de preparación)',
+        UserRole.admin            => 'Administrador del sistema',
       };
 
   static String _varietyLabel(String id) => switch (id) {

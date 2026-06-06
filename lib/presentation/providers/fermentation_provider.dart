@@ -167,12 +167,11 @@ class FermentationNotifier extends _$FermentationNotifier {
     // Full RuleEngine evaluation with complete context
     try {
       final userId = ref.read(currentUserIdProvider);
-      final roleStr = ref.read(currentUserProvider)?.role ?? 'farmer';
-      final userRole = UserRole.values.firstWhere(
-        (r) => r.name == roleStr,
-        orElse: () => UserRole.farmer,
-      );
+      final roleStr = ref.read(currentUserProvider)?.role ?? 'producer';
+      final userRole = roleFromString(roleStr);
       final lot = await ref.read(lotByIdProvider(state.lotId).future);
+      final userAvgH  = await repo.getAvgCompletedDurationH();
+      final lastLotH  = await repo.getLastCompletedDurationH();
 
       final aiContext = AIContext(
         userId: userId,
@@ -190,7 +189,9 @@ class FermentationNotifier extends _$FermentationNotifier {
         currentPh: ph,
         mucilagoTempC: tempC,
         mucilageState: mucilageState,
-        userLotsCompleted: 0,
+        userLotsCompleted:    0,
+        userAvgFermentationH: userAvgH,
+        lastLotFermentationH: lastLotH,
       );
 
       final recs = await engine.recommend(aiContext);
@@ -219,6 +220,8 @@ class FermentationNotifier extends _$FermentationNotifier {
           aiAlertRuleId: alertRuleId,
           aiProjectedEndH: projection,
         );
+        // Sync to backend in background — never awaited, never blocks UI
+        ref.read(syncServiceProvider).syncPendingReadings();
       } catch (e, st) {
         if (kDebugMode) debugPrint('[FermentationProvider] addReading persist: $e\n$st');
         state = state.copyWith(error: () => 'Lectura no guardada localmente. Revisa el almacenamiento.');
