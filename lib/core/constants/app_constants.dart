@@ -67,10 +67,14 @@ abstract final class AppRoutes {
   static const String classification = '/lots/:id/classification';
   static const String depulping      = '/lots/:id/depulping';
   static const String cupping        = '/lots/:id/cupping';
+  static const String milling        = '/lots/:id/milling';
+  static const String baristaHome = '/barista';
+  static const String baristaWizard = '/barista/wizard';
   static const String brew = '/brew';
   static const String brewRecipe = '/brew/recipe';
   static const String brewDiagnosis = '/brew/diagnosis';
   static const String brewHistory = '/brew/history';
   static const String profile = '/profile';
   static const String settings = '/settings';
+  static const String admin = '/admin';
 }

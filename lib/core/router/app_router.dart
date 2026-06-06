@@ -5,6 +5,8 @@ import 'package:special_coffee/core/constants/app_constants.dart';
 import 'package:special_coffee/presentation/screens/auth/login_screen.dart';
 import 'package:special_coffee/presentation/screens/auth/onboarding_screen.dart';
 import 'package:special_coffee/presentation/screens/auth/splash_screen.dart';
+import 'package:special_coffee/presentation/screens/barista/barista_home_screen.dart';
+import 'package:special_coffee/presentation/screens/barista/brew_session_wizard.dart';
 import 'package:special_coffee/presentation/screens/brewing/brew_diagnosis_screen.dart';
 import 'package:special_coffee/presentation/screens/brewing/brew_recipe_screen.dart';
 import 'package:special_coffee/presentation/screens/brewing/brew_screen.dart';
@@ -60,6 +62,12 @@ GoRouter appRouter(Ref ref) {
       if (state.matchedLocation == AppRoutes.admin) {
         final user = ref.read(authProvider).value;
         if (user == null || user.role != 'admin') return AppRoutes.home;
+      }
+
+      // Redirect barista from generic /home to their dedicated screen
+      if (state.matchedLocation == AppRoutes.home) {
+        final user = ref.read(authProvider).value;
+        if (user?.role == 'barista') return AppRoutes.baristaHome;
       }
 
       return null;
@@ -155,6 +163,19 @@ GoRouter appRouter(Ref ref) {
                     ),
                   ),
                 ],
+              ),
+            ],
+          ),
+          GoRoute(
+            path: AppRoutes.baristaHome,
+            pageBuilder: (context, state) => _noTransitionPage(
+              const BaristaHomeScreen(),
+              state,
+            ),
+            routes: [
+              GoRoute(
+                path: 'wizard',
+                builder: (context, state) => const BrewSessionWizard(),
               ),
             ],
           ),

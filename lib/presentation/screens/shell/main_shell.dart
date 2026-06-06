@@ -13,13 +13,14 @@ class _Tab {
   const _Tab(this.icon, this.selectedIcon, this.label, this.route);
 }
 
-const _tabHome    = _Tab(Icons.dashboard_outlined,   Icons.dashboard,   'Inicio',   AppRoutes.home);
-const _tabLots    = _Tab(Icons.inventory_2_outlined, Icons.inventory_2, 'Lotes',    AppRoutes.lots);
-const _tabBrew    = _Tab(Icons.coffee_outlined,      Icons.coffee,      'Preparar', AppRoutes.brew);
-const _tabProfile = _Tab(Icons.person_outline,       Icons.person,      'Perfil',   AppRoutes.profile);
+const _tabHome         = _Tab(Icons.dashboard_outlined,   Icons.dashboard,   'Inicio',   AppRoutes.home);
+const _tabBaristaHome  = _Tab(Icons.dashboard_outlined,   Icons.dashboard,   'Inicio',   AppRoutes.baristaHome);
+const _tabLots         = _Tab(Icons.inventory_2_outlined, Icons.inventory_2, 'Lotes',    AppRoutes.lots);
+const _tabBrew         = _Tab(Icons.coffee_outlined,      Icons.coffee,      'Preparar', AppRoutes.brew);
+const _tabProfile      = _Tab(Icons.person_outline,       Icons.person,      'Perfil',   AppRoutes.profile);
 
 List<_Tab> _tabsFor(String role) => switch (role) {
-  'barista'      => [_tabHome, _tabBrew, _tabProfile],
+  'barista'      => [_tabBaristaHome, _tabBrew, _tabProfile],
   'entrepreneur' => [_tabHome, _tabLots, _tabBrew, _tabProfile],
   _              => [_tabHome, _tabLots, _tabProfile], // farmer, processor
 };

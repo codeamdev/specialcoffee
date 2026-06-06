@@ -7,7 +7,17 @@ import 'package:special_coffee/data/repositories/drying_repository_local.dart';
 import 'package:special_coffee/data/repositories/fermentation_repository_local.dart';
 import 'package:special_coffee/data/repositories/harvest_repository_local.dart';
 import 'package:special_coffee/data/repositories/lot_repository_local.dart';
+import 'package:special_coffee/data/repositories/batch_insights_repository_local.dart';
+import 'package:special_coffee/data/repositories/brew_session_detail_repository_local.dart';
+import 'package:special_coffee/data/repositories/coffee_reference_repository_local.dart';
+import 'package:special_coffee/data/repositories/water_profile_repository_local.dart';
+import 'package:special_coffee/data/sync/sync_data_source.dart';
+import 'package:special_coffee/domain/repositories/brew_session_detail_repository.dart';
+import 'package:special_coffee/domain/repositories/coffee_reference_repository.dart';
+import 'package:special_coffee/domain/repositories/water_profile_repository.dart';
+import 'package:special_coffee/data/sync/sync_service.dart';
 import 'package:special_coffee/data/repositories/brewing_session_repository_local.dart';
+import 'package:special_coffee/data/repositories/milling_repository_local.dart';
 import 'package:special_coffee/data/repositories/washing_repository_local.dart';
 import 'package:special_coffee/domain/repositories/brewing_session_repository.dart';
 import 'package:special_coffee/domain/repositories/classification_repository.dart';
@@ -17,6 +27,7 @@ import 'package:special_coffee/domain/repositories/drying_repository.dart';
 import 'package:special_coffee/domain/repositories/fermentation_repository.dart';
 import 'package:special_coffee/domain/repositories/harvest_repository.dart';
 import 'package:special_coffee/domain/repositories/lot_repository.dart';
+import 'package:special_coffee/domain/repositories/milling_repository.dart';
 import 'package:special_coffee/domain/repositories/washing_repository.dart';
 import 'package:special_coffee/presentation/providers/auth_provider.dart';
 
@@ -90,3 +101,43 @@ BrewingSessionRepository brewingSessionLocalRepo(Ref ref) {
   final userId = ref.watch(currentUserIdProvider);
   return BrewingSessionLocalRepository(db.brewingSessionDao, userId);
 }
+
+@Riverpod(keepAlive: true)
+MillingRepository millingLocalRepo(Ref ref) {
+  final db     = ref.watch(appDatabaseProvider);
+  final userId = ref.watch(currentUserIdProvider);
+  return MillingLocalRepository(db.millingDao, userId);
+}
+
+@Riverpod(keepAlive: true)
+BatchInsightsLocalRepository batchInsightsLocalRepo(Ref ref) {
+  final db     = ref.watch(appDatabaseProvider);
+  final userId = ref.watch(currentUserIdProvider);
+  return BatchInsightsLocalRepository(db.batchInsightsDao, userId);
+}
+
+@Riverpod(keepAlive: true)
+CoffeeReferenceRepository coffeeReferenceLocalRepo(Ref ref) {
+  final db     = ref.watch(appDatabaseProvider);
+  final userId = ref.watch(currentUserIdProvider);
+  return CoffeeReferenceLocalRepository(db.coffeeReferenceDao, userId);
+}
+
+@Riverpod(keepAlive: true)
+WaterProfileRepository waterProfileLocalRepo(Ref ref) {
+  final db     = ref.watch(appDatabaseProvider);
+  final userId = ref.watch(currentUserIdProvider);
+  return WaterProfileLocalRepository(db.waterProfileDao, userId);
+}
+
+@Riverpod(keepAlive: true)
+BrewSessionDetailRepository brewSessionDetailLocalRepo(Ref ref) {
+  final db = ref.watch(appDatabaseProvider);
+  return BrewSessionDetailLocalRepository(db.brewSessionDetailDao);
+}
+
+@Riverpod(keepAlive: true)
+SyncService syncService(Ref ref) => SyncService(
+      LocalSyncDataSource(ref.watch(appDatabaseProvider)),
+      ref.watch(apiClientProvider),
+    );
