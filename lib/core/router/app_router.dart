@@ -7,6 +7,7 @@ import 'package:special_coffee/presentation/screens/auth/onboarding_screen.dart'
 import 'package:special_coffee/presentation/screens/auth/splash_screen.dart';
 import 'package:special_coffee/presentation/screens/barista/barista_home_screen.dart';
 import 'package:special_coffee/presentation/screens/barista/brew_session_wizard.dart';
+import 'package:special_coffee/presentation/screens/lot/workflow_hub_screen.dart';
 import 'package:special_coffee/presentation/screens/brewing/brew_diagnosis_screen.dart';
 import 'package:special_coffee/presentation/screens/brewing/brew_recipe_screen.dart';
 import 'package:special_coffee/presentation/screens/brewing/brew_screen.dart';
@@ -159,6 +160,12 @@ GoRouter appRouter(Ref ref) {
                   GoRoute(
                     path: 'cupping',
                     builder: (context, state) => CuppingScreen(
+                      lotId: state.pathParameters['id']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'workflow',
+                    builder: (context, state) => WorkflowHubScreen(
                       lotId: state.pathParameters['id']!,
                     ),
                   ),

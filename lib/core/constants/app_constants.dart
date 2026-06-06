@@ -70,6 +70,7 @@ abstract final class AppRoutes {
   static const String milling        = '/lots/:id/milling';
   static const String baristaHome = '/barista';
   static const String baristaWizard = '/barista/wizard';
+  static const String lotWorkflow = '/lots/:id/workflow';
   static const String brew = '/brew';
   static const String brewRecipe = '/brew/recipe';
   static const String brewDiagnosis = '/brew/diagnosis';
