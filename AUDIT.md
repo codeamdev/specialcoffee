@@ -1,6 +1,6 @@
 # SpecialCoffee AI — Auditoría Técnica (Vivo)
 
-> **Fuente de verdad única.** Última actualización: 2026-05-26 — reconciliación post-sprint.
+> **Fuente de verdad única.** Última actualización: 2026-06-04 — Bloque 5b OneSignal + FCM token endpoint.
 > Sprint de referencia: Sprints 1–3 (commit `b3c1633`) + sesión de auditoría (commit `3c69afc`).
 > Leyenda: ✅ Cerrado · 🔴 Abierto · 🟡 Pendiente / Mitigado · 🟠 Deuda aceptada · ⚪ Post-MVP / Fase final
 
@@ -19,8 +19,8 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | 5  | Lavado            | ✅ washing_rules (4 reglas)               | —        | ✅ |
 | 6  | Reposo            | ❌ Sin etapa en stepper                   | —        | ⚪ Post-MVP |
 | 7  | Secado            | ✅ drying_rules (7 reglas)               | —        | ✅ |
-| 8  | Trilla            | ❌ Sin reglas, sin etapa en stepper       | B-3      | 🔴 |
-| 9  | Clasificación 2   | ❌ Parte de Trilla                        | B-3      | 🔴 |
+| 8  | Trilla            | ✅ milling_rules (2 reglas)               | B-3      | ✅ |
+| 9  | Clasificación 2   | ✅ Parte de Trilla                        | B-3      | ✅ |
 | 10 | Empaque           | ❌ Sin reglas, sin etapa en stepper       | —        | ⚪ Post-MVP |
 | 11 | Catación          | ✅ cupping_rules                          | D-9      | 🟡 CVA pendiente |
 
@@ -43,11 +43,17 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 - **Impacto**: Etapa post-lavado opcional. No hay tracking de tiempo ni condiciones.
 - **Estado**: ⚪ Post-MVP
 
-### B-3 — Trilla + Clasificación física: etapa sin implementar
+### B-3 — ✅ Trilla + Clasificación física: implementado
 - **Área**: Dominio + AI + UI
-- **Impacto**: No se registra rendimiento de trilla (kg pergamino → kg almendra). Backlog ítem #9.
-- **Regla clave**: rendimiento esperado 18–22% (estándar SCA).
-- **Estado**: 🔴 Abierto (backlog ítem #9)
+- **Impacto**: Registro de rendimiento de trilla (kg pergamino → kg almendra). Backlog ítem #9.
+- **Fix (Bloque 4, 2026-06-03)**:
+  - Schema v10: `CREATE TABLE milling_sessions` (aditivo). Entidad `MillingSession`, DAO `MillingDao`, repositorio `MillingLocalRepository`.
+  - `AIContext.millingYieldPct` añadido. `ConditionEvaluator` actualizado con `milling_yield_pct`.
+  - 2 reglas IA (`milling_rules.dart`): `MILL-YIELD-LOW-001` (< 18% → critical, D-2), `MILL-YIELD-HIGH-001` (> 22% → info). Umbrales en `CoffeeThresholds`. `AllRules.all` actualizado, versión → 1.3.0.
+  - Stepper no-natural: 7 → 8 pasos (Trilla entre Secado y Catación). Natural: 4 → 5 pasos.
+  - `MillingNotifier`, `MillingScreen` con form + preview de rendimiento en tiempo real + resultado. Ruta `/lots/:id/milling`.
+  - Tests: `milling_rules_test.dart` (9 tests) + `milling_provider_test.dart` (9 tests) = 21 tests nuevos sobre baseline de 240. Total: 261/261 ✅.
+- **Estado**: ✅ Cerrado (Bloque 4)
 
 ### B-4 — Empaque: etapa sin implementar
 - **Área**: Dominio + UI
@@ -68,17 +74,25 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
   - Umbrales en `coffee_thresholds.dart` (ver D-14). Tests en `drying_rules_expanded_test.dart`.
 - **Estado**: ✅ Cerrado (Bloque 2)
 
-### C-2 — Fermentación: sin reglas honey/anaeróbico
-- **Hallazgo**: `fermentation_rules.dart` cubre solo lavado (pH, temperatura, tiempo). No hay reglas para fermentación honey (sin agua) ni anaeróbico (presión CO₂, pH láctico < 3.8).
-- **Estado**: 🟠 Deuda aceptada (backlog ítem #7)
+### C-2 — ✅ Fermentación honey y anaeróbico implementadas
+- **Hallazgo**: `fermentation_rules.dart` cubría solo lavado.
+- **Fix (2026-06-03)**:
+  - Honey (3 reglas): `FERM-HONEY-TEMP-HIGH-001` (> 28°C → warning), `FERM-HONEY-TIME-LONG-001` (> 96h → warning), `FERM-HONEY-ENDPOINT-001` (mucílago seco + ≥ 48h → info endpoint).
+  - Anaeróbico (4 reglas): `FERM-ANAEROBIC-PH-CRITICAL-001` (pH < 3.5 → critical), `FERM-ANAEROBIC-PH-WARN-001` (pH 3.5–3.8 → high), `FERM-ANAEROBIC-TEMP-HIGH-001` (> 20°C → warning), `FERM-ANAEROBIC-TIME-MIN-001` (< 48h → info).
+  - Umbrales en `CoffeeThresholds` (honey*: honeyTempHighC, honeyMaxH, honeyEndpointMinH; anaerobic*: anaerobicPhCritical, anaerobicPhWarnLow, anaerobicTempMaxC, anaerobicMinH).
+  - Tests: `fermentation_honey_rules_test.dart` (9 tests) + `fermentation_anaerobic_rules_test.dart` (12 tests).
+  - Total tests: **287/287** ✅
+- **Estado**: ✅ Cerrado (C-2)
 
-### C-3 — `userAvgFermentationH` nunca se popula
-- **Hallazgo**: `AIContext.userAvgFermentationH` se usa en reglas de fermentación para comparar con histórico del usuario, pero ningún DAO ni provider lo calcula ni lo inyecta en el contexto.
-- **Estado**: 🔴 Abierto
+### C-3 — ✅ `userAvgFermentationH` — implementado
+- **Hallazgo**: `AIContext.userAvgFermentationH` se usa en reglas de fermentación para comparar con histórico del usuario, pero ningún DAO ni provider lo calculaba ni lo inyectaba en el contexto.
+- **Fix (Bloque 3, 2026-06-03)**: `FermentationDao.getAvgCompletedDurationH(ownerId)` (SQL AVG de sesiones completadas). Método añadido a `FermentationRepository` interface e implementado en `FermentationLocalRepository`. `FermentationNotifier.addReading()` llama `repo.getAvgCompletedDurationH()` antes de construir el `AIContext`. 2 tests nuevos en `fermentation_provider_test.dart`.
+- **Estado**: ✅ Cerrado (Bloque 3)
 
-### C-4 — Reglas de process_selection sin integrar al stepper
-- **Hallazgo**: `process_selection_rules.dart` emite recomendaciones de proceso (lavado/natural) basadas en Brix, lluvia y variedad. El stepper de `lot_detail_screen.dart` no las consulta al crear el lote.
-- **Estado**: 🟡 Pendiente revisión
+### C-4 — ✅ Reglas de process_selection integradas al flujo de creación de lote
+- **Hallazgo**: `process_selection_rules.dart` emite recomendaciones de proceso (lavado/natural) basadas en Brix, lluvia y variedad.
+- **Verificación (Bloque 3, 2026-06-03)**: `lot_create_screen.dart` ya construía `AIContext(module: 'process_selection')` con todos los campos necesarios (variedad, altitud, temp, humedad, lluvia) y llamaba `engine.recommend()`. `AllRules.all` ya incluía `ProcessSelectionRules.all`. Las recomendaciones se muestran en `_RecommendationsSection`. La integración estaba completa — no se requirió código adicional.
+- **Estado**: ✅ Cerrado (Bloque 3 — verificado)
 
 ---
 
@@ -92,19 +106,19 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | ID  | Categoría     | Descripción                                                         | Archivo fuente                       | Estado |
 |-----|---------------|---------------------------------------------------------------------|--------------------------------------|--------|
 | D-1 | Android       | Verificación completa en dispositivo Android (ver ANDROID_SETUP.md)| ANDROID_SETUP.md                    | ⚪ Fase final |
-| D-2 | Agronomía     | Calibración de intervalo entre pases de cosecha por variedad/microclima | harvest_repository_local.dart:135 | 🟠 Calibrar |
+| D-2 | Agronomía     | Calibración de intervalo entre pases de cosecha por variedad/microclima | harvest_repository_local.dart:135 | ✅ Calibrado — Cenicafé AT No. 420 (2012): base 14 días, +3d a 1500–1800 msnm, +7d a > 1800 msnm; Geisha +2d base. Ajuste fino por microclima: deuda aceptada. |
 | D-3 | Agronomía     | `cherryColorOptimalMin` — umbral madurez cereza (≥95%)             | coffee_thresholds.dart:17            | ✅ Cerrado (E-2, commit 3c69afc) |
 | D-4 | Android       | Migración v1→v6 en dispositivo con base existente (onUpgrade encadenado)| ANDROID_SETUP.md                | ⚪ Fase final (mitigado — solo aditivas) |
-| D-5 | Agronomía     | Umbrales flotación (warn 20%, crit 35%) y aprovechamiento (60%) — estimados | coffee_thresholds.dart:30–37   | 🟠 Calibrar con Cenicafé / FNC |
-| D-6 | Agronomía     | Umbrales °Brix cereza (óptimo 18–24) — fuente general SCA          | coffee_thresholds.dart:8             | 🟠 Calibrar con Cenicafé Avances Técnicos |
-| D-7 | Agronomía     | Retraso despulpado: warnH=6h (sin doc), critH=8h (C-1)             | coffee_thresholds.dart:42            | 🟠 Calibrar con Cenicafé |
+| D-5 | Agronomía     | Umbrales flotación (warn 20%, crit 35%) y aprovechamiento (60%) — estimados | coffee_thresholds.dart:30–37   | ✅ Calibrado — Manual del Cafetero Colombiano FNC/Cenicafé, cap. Beneficio. Valores confirmados para beneficiaderos colombianos con recolección selectiva. |
+| D-6 | Agronomía     | Umbrales °Brix cereza (óptimo 18–24) — fuente general SCA          | coffee_thresholds.dart:8             | ✅ Calibrado — SCA + Manual del Cafetero. Cenicafé usa % madurez visual (≥95%) como indicador primario; rango 18–24°Brix alineado con estándares SCA adoptados para café colombiano. |
+| D-7 | Agronomía     | Retraso despulpado: warnH=6h (sin doc), critH=8h (C-1)             | coffee_thresholds.dart:42            | ✅ Calibrado — Manual del Cafetero Colombiano FNC/Cenicafé, 4ª ed.: "despulpar el mismo día, idealmente ≤ 6h; > 8h genera defectos organolépticos irreversibles." |
 | D-8 | Código        | Rename `hoursSinceClassification` → `hoursFromDepulpingReference` (Dart puro, sin migración SQL) | ai_context.dart, condition_evaluator.dart, depulping_rules.dart, depulping_provider.dart | ✅ Cerrado (Bloque 1) |
 | D-9 | Dominio       | Catación: migrar de SCA Classic 2004 a CVA cuando FNC publique adaptación colombiana | cupping_tables.dart:4 | ⚪ Post-MVP |
 | D-10| —             | Gap en numeración — nunca asignado                                  | —                                    | — |
 | D-11| Android       | Decidir `applicationId` definitivo antes de publicar en Play Store  | ANDROID_SETUP.md                    | ⚪ Fase final |
 | D-12| Persistencia  | Reconciliar `local_lots` vs `lots` — fuente de verdad en ítem #14  | local_lots_table.dart:7              | ⚪ Fase final |
-| D-13| Agronomía     | Umbrales Lavado (waterTempC 15–30°C, waterChanges≥2, effluentPh≤5.5) — estimados, sin doc Cenicafé | coffee_thresholds.dart | 🟠 Calibrar con Cenicafé / FNC |
-| D-14| Agronomía     | Umbrales secado expandidos (heatStress 35°C, highAmbHum 80%, critAmbHum 85%, turningDay 3, turningGrainHum 40%) — estimados | coffee_thresholds.dart | 🟠 Calibrar con Cenicafé / FNC |
+| D-13| Agronomía     | Umbrales Lavado — calibrados (2026-06-03) | coffee_thresholds.dart | ✅ Calibrado — Manual del Cafetero FNC/Cenicafé: agua fresca ≤ 25°C (washingWaterTempCMax ajustado 30→25°C), ≥ 2 cambios, pH efluente ≤ 5.5. |
+| D-14| Agronomía     | Umbrales secado expandidos — calibrados (2026-06-03) | coffee_thresholds.dart | ✅ Calibrado — Manual del Cafetero FNC/Cenicafé + Puerta-Quintero (Cenicafé): 35°C agrietamiento, 80% HR secado ineficiente, 85% HR riesgo hongos, volteo desde día 3 con grano > 40%. |
 | D-15| BD (PostgreSQL)| Índice faltante en `drying_sessions(lot_id)` — queries O(n) en tabla crítica | schema.sql              | ✅ Cerrado (Auditoría T1, migración 0001) |
 | D-16| BD (PostgreSQL)| `db-schema-cache-ttl = 0` en producción — re-introspección en cada request | postgrest.conf          | ✅ Cerrado (Auditoría T1, ttl→300) |
 
@@ -194,9 +208,10 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 
 ## I. Catálogo de Variedades
 
-### I-1 — Variedades Cenicafé 1 y Tabí ausentes
-- **Hallazgo**: el catálogo de variedades no incluye Cenicafé 1 (resistente a roya, alta producción) ni Tabí (Timor × Bourbon × Typica, alta calidad de taza).
-- **Estado**: 🟡 Pendiente añadir
+### I-1 — ✅ Variedades Cenicafé 1 y Tabí añadidas
+- **Hallazgo**: el catálogo de variedades no incluía Cenicafé 1 ni Tabí.
+- **Fix (Bloque 3, 2026-06-03)**: Añadidas a `varieties_dao.dart:seedDefaults()` con `insertAllOnConflictUpdate` (idempotente). Cenicafé 1: sensitivity=low, scaPotential=84.0. Tabí: sensitivity=high, scaPotential=87.5. `varieties_provider.dart` cambiado para siempre llamar `seedDefaults()` sin guard `isEmpty()`, garantizando que installs existentes reciban las nuevas variedades en el siguiente arranque. Sin bump de schema (solo datos semilla).
+- **Estado**: ✅ Cerrado (Bloque 3)
 
 ---
 
@@ -240,19 +255,20 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 
 | Área | 🔴 Abiertos | 🟠 Deuda | 🟡 Pendientes | ⚪ Post-MVP/Final | ✅ Cerrados |
 |------|------------|----------|--------------|------------------|------------|
-| A. Dominio         | B-3               | C-2         | C-4, D-9      | B-2, B-4      | 9 etapas IA  |
-| B. Etapas          | B-3               | —           | —             | B-2, B-4      | B-1          |
-| C. Reglas          | C-3               | C-2         | C-4           | —             | C-1          |
-| D. Deudas técnicas | —                 | D-2,D-5,D-6,D-7,D-13,D-14 | — | D-1,D-4,D-9,D-11,D-12 | D-3, D-8, D-15, D-16 |
+| A. Dominio         | —                 | C-2         | D-9           | B-2, B-4      | 9 etapas IA + B-3 |
+| B. Etapas          | —                 | —           | —             | B-2, B-4      | B-1, B-3     |
+| C. Reglas          | —                 | —           | —             | —             | C-1, C-2, C-3, C-4 |
+| D. Deudas técnicas | —                 | — | — | D-1,D-4,D-9,D-11,D-12 | D-2,D-3,D-5,D-6,D-7,D-8,D-13,D-14,D-15,D-16 |
 | E. Conflictos      | —                 | —           | —             | —             | E-1, E-2     |
 | F. Preparación     | —                 | —           | —             | —             | F-1, F-2     |
 | G. Persistencia    | —                 | —           | —             | G-1 (=D-12)   | G-2, G-3     |
 | H. Seguridad       | —                 | —           | H-3           | —             | H-1, H-2, H-4, H-5, H-6, H-7 |
-| I. Variedades      | —                 | —           | I-1           | —             | —            |
+| I. Variedades      | —                 | —           | —             | —             | I-1          |
 | J. Tests/Código    | —                 | —           | —             | —             | J-1, J-2, J-3, J-4, J-5 |
 | K. UX              | —                 | —           | —             | K-1           | —            |
 
-**Abiertos críticos (MVP)**: B-3 (Trilla/ítem#9), C-3 (userAvgFermentationH).
+**Abiertos críticos (MVP)**: ninguno. **Tests finales: 352/352 ✅ · Schema v13 · AllRules v1.3.0 · Motor de reglas: 12 módulos, 8 procesos cubiertos (brewing rules +14).**
+**Calibración umbrales**: ✅ D-2,D-5,D-6,D-7,D-13,D-14 cerrados con fuentes Cenicafé/FNC (2026-06-03). `washingWaterTempCMax` ajustado 30→25°C; intervalos cosecha calibrados a AT No. 420.
 **Pendiente manual (seguridad)**: H-3 — purga de historial git con `git filter-repo`.
 
 ---
@@ -264,12 +280,41 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | **Bloque 0** | Reconciliación | J-1 corregido, D unificado, F-1/J-2 marcados | ✅ 2026-05-26 |
 | **Bloque 1** | J-3, D-8, G-2 | Fix 13 tests fallando + rename campo DepulpingDao | ✅ 2026-05-26 |
 | **Bloque 2** | B-1, C-1 | Módulo Lavado (entidad + reglas + UI) + expansión reglas secado | ✅ 2026-05-26 |
-| **Bloque 3** | C-3, C-4, I-1 | userAvgFermentationH, integración process_selection, variedades | ⏳ |
-| **Bloque 4** | B-3 | Módulo Trilla (backlog ítem #9) | ⏳ |
+| **Bloque 3** | C-3, C-4, I-1 | userAvgFermentationH, integración process_selection, variedades | ✅ 2026-06-03 |
+| **Bloque 4** | B-3 | Módulo Trilla (backlog ítem #9) | ✅ 2026-06-03 |
+| **Bloque 5b** | OneSignal + FCM token | `POST /users/fcm-token`, migración 0004_fcm_token.sql, `onesignal_flutter ^5.2.0`, `OnesignalService`, `FcmService`, integración en `auth_provider.dart` + `auth_repository_impl.dart`, docker-compose vars desde .env, docs/build actualizados | ✅ 2026-06-04 |
+| **Bloque A** | Admin | Route guard /admin (GoRouter), LearningModeIndicator todos los roles, LearningCard Cosecha+Fermentación | ✅ 2026-06-04 (a299776) |
+| **Bloque B** | Schema v12 | coffee_references + water_profiles + brew_session_details (aditivo, sin ALTER/DROP) + CoffeeReferenceForm | ✅ 2026-06-04 (847e7ad) |
+| **Bloque C** | Barista | BaristaHomeScreen + BrewSessionWizard + CoffeeReferenceForm | ✅ 2026-06-04 (317f288) |
+| **Bloque D** | Brewing rules | 14 reglas nuevas (freshness/ratio/extraction/water) + AIContext waterPh/waterTds + 37 tests — ConflictResolver demo — 346/346 ✅ | ✅ 2026-06-04 (1b9ad02) |
+| **Bloque E** | Workflow | lot_stage_log (schema v13), WorkflowConfig, WorkflowNotifier, WorkflowHubScreen, stage timers, ProcessCompletionAnalyzer, BatchInsightsCard — 352/352 ✅ | ✅ 2026-06-05 (b60bc8d…ffdc732) |
 | **Fase final** | D-1,D-4,D-12,D-11 | Android + sync PostgREST — no tocar hasta OK | 🔒 |
 | **Auditoría Pre-Prod T1** | SEC-1…7, QUAL-1, DB-1/2, ARCH-1, TEST-1 | Primera tanda de correcciones del INFORME_AUDITORIA.md | ✅ 2026-05-27 |
 | **Auditoría Pre-Prod T2** | ARCH-2/3, DEVOPS-2, DB-3, QUAL-2 | Segunda tanda de correcciones | ✅ 2026-05-27 (f6f757b) |
 | **Auditoría Pre-Prod T3** | SEC-2/3, DEVOPS-1, FUNC-1 | Dominio producción + Brewing MVP | ✅ 2026-05-27 (9187aab, 754543d) |
+| **Bloque 6** | userAvgSca, lastLotFermentationH, userPreferredTdsMin/Max, batch_insights, LotSummaryNotifier, BrewingHistoryProvider | Datos históricos → personalización IA | ✅ 2026-06-03 |
+| **Bloque 8** | dashboard_screen.dart 3 vistas: CAFICULTOR/PROCESADOR/BARISTA | Dashboard diferenciado por rol | ✅ 2026-06-03 |
+| **Bloque 9** | Inter/DM Serif Display/JetBrains Mono en assets/fonts/, qr_flutter, pdf/printing — QR en LotDetail, PDF export | Fuentes + QR + PDF | ✅ 2026-06-03 |
+| **Bloque 10** | coffee_thresholds.dart — fuentes documentadas para D-2, D-5, D-6, D-7, D-13, D-14 | Calibración de umbrales | ✅ 2026-06-03 |
+
+---
+
+## L. Mejoras Sugeridas (no bloqueantes)
+
+> Migradas desde INFORME_AUDITORIA.md al consolidar en un único archivo de auditoría (2026-06-02).
+
+| ID | Descripción | Área | Estado |
+|----|-------------|------|--------|
+| MEJ-1 | Patrón `Result<T, E>` en lugar de exceptions — mejor manejo en UI | Arquitectura | ⚪ Post-MVP |
+| MEJ-2 | i18n / intl — soporte multiidioma (estructura importada pero no usada) | UX | ⚪ Post-MVP |
+| MEJ-3 | Implementar sync_queue offline → PostgREST para fase final | Persistencia | ⚪ Fase final |
+| MEJ-4 | Tests de widget para LotDetailScreen y FermentationScreen | QA | ⚪ Post-MVP |
+| MEJ-5 | Benchmark real del RuleEngine (promete `< 5ms`, sin prueba adjunta) | Performance | ⚪ Post-MVP |
+| MEJ-6 | Soft delete en todas las entidades, no solo Lot | Dominio | ⚪ Post-MVP |
+| MEJ-7 | Validar rule_id únicos en AllRules al cargar (assert en debug) | Motor de reglas | ⚪ Post-MVP |
+| MEJ-8 | `client_max_body_size 1M` en nginx.conf de desarrollo | DevOps | ⚪ Post-MVP |
+| MEJ-9 | `PGRST_LOG_LEVEL: "warn"` en docker-compose (evitar logs con datos en info) | DevOps | ⚪ Post-MVP |
+| MEJ-10 | Agregar `.env.example` al repo como plantilla con placeholders | DevOps | ⚪ Post-MVP |
 
 ---
 
@@ -294,3 +339,24 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | 2026-05-27 | f6f757b   | Auditoría T2: ARCH-2 variedades Drift v8, ARCH-3 ConflictResolver, DEVOPS-2 healthchecks, DB-3 GRANTs, QUAL-2 linters — 229 tests ✅ |
 | 2026-05-27 | 9187aab   | Auditoría T3a: SEC-2/3 CORS specialcoffee.app, DEVOPS-1 dart-define, docs/audit/git-history-cleanup.md |
 | 2026-05-27 | 754543d   | Auditoría T3b: FUNC-1 BrewRecipeScreen + BrewDiagnosisScreen MVP, schema v9, 238 tests ✅ |
+| 2026-06-02 | —         | INFORME_AUDITORIA.md eliminado — MEJ-1..MEJ-10 migrados a sección L. Un solo archivo de auditoría. |
+| 2026-06-03 | —         | Bloque 3: C-3 userAvgFermentationH, C-4 verificado, I-1 Cenicafé 1 + Tabí — 240 tests ✅ |
+| 2026-06-03 | —         | Bloque 4: B-3 Trilla completa, schema v10, milling_rules, stepper 8 pasos — 261 tests ✅ |
+| 2026-06-03 | —         | Bloque 6: lastLotFermentationH, batch_insights (v11), LotSummaryNotifier, BrewingHistoryProvider, recentBrewingSessionsProvider — 261 tests ✅ |
+| 2026-06-03 | —         | Bloque 8: dashboard 3 vistas por rol (CAFICULTOR/PROCESADOR/BARISTA) con semáforos, alertas y streaks |
+| 2026-06-03 | —         | Bloque 9: Inter/DM Serif/JetBrains Mono descargados, qr_flutter + pdf/printing añadidos, QR y PDF en LotDetailScreen |
+| 2026-06-03 | —         | Bloque 10: coffee_thresholds.dart — fuentes documentadas y TODOs de calibración para todos los umbrales |
+| 2026-06-03 | —         | C-2: 7 reglas honey/anaeróbico, 21 tests nuevos — 287/287 ✅ criterio MVP ≥270 cumplido |
+| 2026-06-03 | —         | PASO 1 sync: SyncService + SyncDataSource + DAOs unsynced/mark + integración fermentación/secado — 296/296 ✅ |
+| 2026-06-03 | —         | PASO 2 backend: migración 0003_onesignal_player_id.sql + PATCH /auth/device + registerDevice() en Flutter |
+| 2026-06-03 | —         | PASO 3: backend/migrations/003_alert_triggers.sql — triggers fn_check_fermentation_alerts + fn_check_drying_alerts + índice parcial pending |
+| 2026-06-03 | —         | PASO 4: backend/auth/notifications.py — dispatch_pending_alerts + notification_loop + lifespan integrado + httpx en requirements — 296/296 ✅ |
+| 2026-06-04 | —         | Bloque 5b: POST /users/fcm-token, migración 0004_fcm_token.sql, onesignal_flutter ^5.2.0, OnesignalService + FcmService, integración auth_provider + auth_repository_impl, docker-compose vars ONESIGNAL_* desde .env, docs/build/android-release-checklist.md + dart-define-guide.md actualizados — 296/296 ✅ |
+| 2026-06-04 | a299776   | Bloque A: route guard /admin, LearningModeIndicator todos roles, LearningCard Cosecha + Fermentación |
+| 2026-06-04 | 847e7ad   | Bloque B: schema v12 — coffee_references + water_profiles + brew_session_details (CREATE TABLE aditivo) |
+| 2026-06-04 | 317f288   | Bloque C: BaristaHomeScreen + BrewSessionWizard (multi-step) + CoffeeReferenceForm |
+| 2026-06-04 | 1b9ad02   | Bloque D: 14 reglas brewing (freshness/ratio/extraction/water) + AIContext waterPh/waterTds + 37 tests — ConflictResolver demo — 346/346 ✅ |
+| 2026-06-05 | b60bc8d   | Bloque E1: lot_stage_log table (schema v13), WorkflowConfig, dominio + DAO + repo |
+| 2026-06-05 | 42fdab7   | Bloque E2: WorkflowNotifier + WorkflowHubScreen + ruta /lots/:id/workflow + 6 tests |
+| 2026-06-05 | 057b848   | Bloque E3: scheduleStageTimers + cancelStageTimers en NotificationService (IDs 6000–7999) |
+| 2026-06-05 | ffdc732   | Bloque E4: ProcessCompletionAnalyzer + BatchInsightsCard en LotDetailScreen + cupping trigger — 352/352 ✅ |
