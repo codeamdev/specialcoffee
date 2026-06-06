@@ -57,6 +57,10 @@ abstract class AIContext with _$AIContext {
     @Default('') String roastLevel,   // 'light'|'medium'|'dark'
     @Default(0) int roastDays,
     @Default(0.0) double waterHardnessPpm,
+    // Estándares SCA Water 2018: TDS óptimo 75–250 ppm, pH óptimo 6.5–7.5.
+    // 0.0 = no medido; reglas BREW-WATER-* usan between 0.1–X para evitar falsos positivos.
+    @Default(0.0) double waterTds,
+    @Default(0.0) double waterPh,
     @Default(0.0) double measuredTdsPct,
     @Default(0.0) double measuredYieldPct,
 
@@ -72,9 +76,15 @@ abstract class AIContext with _$AIContext {
     @Default('medium') String varietySensitivity,       // 'low'|'medium'|'high'|'very_high'
     @Default(85.0) double varietyScaPotential,
 
+    // ── TRILLA ────────────────────────────────────────────────────
+    // 0.0 = no registrado; reglas MILL-* usan between para evitar falsos positivos.
+    @Default(0.0) double millingYieldPct,
+
     // ── HISTORIAL (personalización) ───────────────────────────────
     @Default(0.0) double userAvgSca,
     @Default(0.0) double userAvgFermentationH,
+    // Duración del último lote completado; 0.0 = sin historial.
+    @Default(0.0) double lastLotFermentationH,
     @Default(0) int userLotsCompleted,
 
     // ── LAVADO ────────────────────────────────────────────────────

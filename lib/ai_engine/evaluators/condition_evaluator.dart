@@ -23,6 +23,8 @@ class ConditionEvaluator {
     'drying_day_number':           (c) => c.dryingDayNumber.toDouble(),
     'roast_days':                  (c) => c.roastDays.toDouble(),
     'water_hardness_ppm':          (c) => c.waterHardnessPpm,
+    'water_tds':                   (c) => c.waterTds,
+    'water_ph':                    (c) => c.waterPh,
     'measured_tds_pct':            (c) => c.measuredTdsPct,
     'measured_yield_pct':          (c) => c.measuredYieldPct,
     'user_preferred_tds_min':      (c) => c.userPreferredTdsMin,
@@ -39,6 +41,8 @@ class ConditionEvaluator {
     'washing_water_temp_c':        (c) => c.washingWaterTempC,
     'washing_water_changes':       (c) => c.washingWaterChanges.toDouble(),
     'washing_effluent_ph':         (c) => c.washingEffluentPh,
+    'milling_yield_pct':           (c) => c.millingYieldPct,
+    'last_lot_fermentation_h':     (c) => c.lastLotFermentationH,
   };
 
   // ── Campos de texto del AIContext ────────────────────────────────────────────
