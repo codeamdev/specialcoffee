@@ -1,6 +1,6 @@
 # SpecialCoffee AI — Auditoría Técnica (Vivo)
 
-> **Fuente de verdad única.** Última actualización: 2026-06-04 — Bloque 5b OneSignal + FCM token endpoint.
+> **Fuente de verdad única.** Última actualización: 2026-06-05 — Bloques F (RBAC 6 roles) + G (Coffee Master, schema v14) + H (Brand Manager, schema v15).
 > Sprint de referencia: Sprints 1–3 (commit `b3c1633`) + sesión de auditoría (commit `3c69afc`).
 > Leyenda: ✅ Cerrado · 🔴 Abierto · 🟡 Pendiente / Mitigado · 🟠 Deuda aceptada · ⚪ Post-MVP / Fase final
 
@@ -267,8 +267,8 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | J. Tests/Código    | —                 | —           | —             | —             | J-1, J-2, J-3, J-4, J-5 |
 | K. UX              | —                 | —           | —             | K-1           | —            |
 
-**Abiertos críticos (MVP)**: ninguno. **Tests finales: 352/352 ✅ · Schema v13 · AllRules v1.3.0 · Motor de reglas: 12 módulos, 8 procesos cubiertos (brewing rules +14).**
-**Calibración umbrales**: ✅ D-2,D-5,D-6,D-7,D-13,D-14 cerrados con fuentes Cenicafé/FNC (2026-06-03). `washingWaterTempCMax` ajustado 30→25°C; intervalos cosecha calibrados a AT No. 420.
+**Abiertos críticos (MVP)**: ninguno. **Tests finales: 352/352 ✅ · Schema v15 · AllRules v1.3.0 · Motor de reglas: 12 módulos, 8 procesos cubiertos (brewing rules +14).**
+**Calibración umbrales**: ✅ D-2,D-5,D-6,D-7,D-13,D-14 cerrados con fuentes Cenicafé/FNC (2026-06-03). `washingWaterTempCMax` ajustado 30→25°C; intervalos cosecha calibrados a AT No. 420. Bloque G: umbrales `physical_analyses` documentados (SCA Defect Handbook, ISO 6673) y `roast_profiles` (Scott Rao, SCA Roast Color Classification).
 **Pendiente manual (seguridad)**: H-3 — purga de historial git con `git filter-repo`.
 
 ---
@@ -288,6 +288,9 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | **Bloque C** | Barista | BaristaHomeScreen + BrewSessionWizard + CoffeeReferenceForm | ✅ 2026-06-04 (317f288) |
 | **Bloque D** | Brewing rules | 14 reglas nuevas (freshness/ratio/extraction/water) + AIContext waterPh/waterTds + 37 tests — ConflictResolver demo — 346/346 ✅ | ✅ 2026-06-04 (1b9ad02) |
 | **Bloque E** | Workflow | lot_stage_log (schema v13), WorkflowConfig, WorkflowNotifier, WorkflowHubScreen, stage timers, ProcessCompletionAnalyzer, BatchInsightsCard — 352/352 ✅ | ✅ 2026-06-05 (b60bc8d…ffdc732) |
+| **Bloque F** | RBAC | UserRole 6 valores (producer/coffeeMaster/brandManager/producerIntegral/barista/admin) + roleFromString() backward-compat + guards router + dashboard/shell/onboarding — 352/352 ✅ | ✅ 2026-06-05 (6f5c04c) |
+| **Bloque G** | Coffee Master (v14) | physical_analyses (densidad/humedad/Aw/defectos SCA), roast_profiles (pesos/merma/DTR/Agtron), cupping_evaluations (scoresheet SCA 12 atributos) + CoffeeMasterLotScreen — 352/352 ✅ | ✅ 2026-06-05 (26e082d) |
+| **Bloque H** | Brand Manager (v15) | green_inventory + roasted_inventory + commercial_products + lot_certifications + BrandManagerScreen + LotCertificationsCard — 352/352 ✅ | ✅ 2026-06-05 (26e082d) |
 | **Fase final** | D-1,D-4,D-12,D-11 | Android + sync PostgREST — no tocar hasta OK | 🔒 |
 | **Auditoría Pre-Prod T1** | SEC-1…7, QUAL-1, DB-1/2, ARCH-1, TEST-1 | Primera tanda de correcciones del INFORME_AUDITORIA.md | ✅ 2026-05-27 |
 | **Auditoría Pre-Prod T2** | ARCH-2/3, DEVOPS-2, DB-3, QUAL-2 | Segunda tanda de correcciones | ✅ 2026-05-27 (f6f757b) |

@@ -1,6 +1,6 @@
 # Plan de Ejecución — SpecialCoffee AI
 > **Última actualización:** 2026-06-05  
-> **Tests:** 352/352 ✅ · **Schema:** Drift v13 · **AllRules:** v1.3.0 · **Bloques cerrados:** A, B, C, D, E  
+> **Tests:** 352/352 ✅ · **Schema:** Drift v15 · **AllRules:** v1.3.0 · **Bloques cerrados:** A, B, C, D, E, F, G, H  
 > **Fuente de verdad de deudas:** `AUDIT.md` · Fuente de pendientes: este archivo
 
 ---
