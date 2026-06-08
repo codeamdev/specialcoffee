@@ -19,6 +19,15 @@ import 'package:special_coffee/core/database/daos/milling_dao.dart';
 import 'package:special_coffee/core/database/daos/varieties_dao.dart';
 import 'package:special_coffee/core/database/daos/washing_dao.dart';
 import 'package:special_coffee/core/database/daos/water_profile_dao.dart';
+// Block G — Coffee Master
+import 'package:special_coffee/core/database/daos/physical_analysis_dao.dart';
+import 'package:special_coffee/core/database/daos/roast_profile_dao.dart';
+import 'package:special_coffee/core/database/daos/cupping_evaluation_dao.dart';
+// Block H — Brand Manager
+import 'package:special_coffee/core/database/daos/green_inventory_dao.dart';
+import 'package:special_coffee/core/database/daos/roasted_inventory_dao.dart';
+import 'package:special_coffee/core/database/daos/commercial_product_dao.dart';
+import 'package:special_coffee/core/database/daos/lot_certification_dao.dart';
 import 'package:special_coffee/core/database/tables/batch_insights_table.dart';
 import 'package:special_coffee/core/database/tables/lot_stage_log_table.dart';
 import 'package:special_coffee/core/database/tables/brew_session_details_table.dart';
@@ -36,6 +45,15 @@ import 'package:special_coffee/core/database/tables/milling_tables.dart';
 import 'package:special_coffee/core/database/tables/varieties_table.dart';
 import 'package:special_coffee/core/database/tables/washing_tables.dart';
 import 'package:special_coffee/core/database/tables/water_profiles_table.dart';
+// Block G tables
+import 'package:special_coffee/core/database/tables/physical_analyses_table.dart';
+import 'package:special_coffee/core/database/tables/roast_profiles_table.dart';
+import 'package:special_coffee/core/database/tables/cupping_evaluations_table.dart';
+// Block H tables
+import 'package:special_coffee/core/database/tables/green_inventory_table.dart';
+import 'package:special_coffee/core/database/tables/roasted_inventory_table.dart';
+import 'package:special_coffee/core/database/tables/commercial_products_table.dart';
+import 'package:special_coffee/core/database/tables/lot_certifications_table.dart';
 
 part 'app_database.g.dart';
 
@@ -61,6 +79,15 @@ part 'app_database.g.dart';
     WaterProfiles,
     BrewSessionDetails,
     LotStageLogs,
+    // Block G — Coffee Master (v14)
+    PhysicalAnalyses,
+    RoastProfiles,
+    CuppingEvaluations,
+    // Block H — Brand Manager (v15)
+    GreenInventories,
+    RoastedInventories,
+    CommercialProducts,
+    LotCertifications,
   ],
   daos: [
     FermentationDao, DryingDao, HarvestDao, ClassificationDao,
@@ -68,13 +95,18 @@ part 'app_database.g.dart';
     BrewingSessionDao, MillingDao, BatchInsightsDao,
     CoffeeReferenceDao, WaterProfileDao, BrewSessionDetailDao,
     LotStageLogDao,
+    // Block G
+    PhysicalAnalysisDao, RoastProfileDao, CuppingEvaluationDao,
+    // Block H
+    GreenInventoryDao, RoastedInventoryDao, CommercialProductDao,
+    LotCertificationDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -118,6 +150,19 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 13) {
             await m.createTable(lotStageLogs);
+          }
+          // Block G — Coffee Master
+          if (from < 14) {
+            await m.createTable(physicalAnalyses);
+            await m.createTable(roastProfiles);
+            await m.createTable(cuppingEvaluations);
+          }
+          // Block H — Brand Manager
+          if (from < 15) {
+            await m.createTable(greenInventories);
+            await m.createTable(roastedInventories);
+            await m.createTable(commercialProducts);
+            await m.createTable(lotCertifications);
           }
         },
       );

@@ -8,6 +8,8 @@ import 'package:special_coffee/presentation/screens/auth/splash_screen.dart';
 import 'package:special_coffee/presentation/screens/barista/barista_home_screen.dart';
 import 'package:special_coffee/presentation/screens/barista/brew_session_wizard.dart';
 import 'package:special_coffee/presentation/screens/lot/workflow_hub_screen.dart';
+import 'package:special_coffee/presentation/screens/coffee_master/coffee_master_lot_screen.dart';
+import 'package:special_coffee/presentation/screens/brand_manager/brand_manager_screen.dart';
 import 'package:special_coffee/presentation/screens/brewing/brew_diagnosis_screen.dart';
 import 'package:special_coffee/presentation/screens/brewing/brew_recipe_screen.dart';
 import 'package:special_coffee/presentation/screens/brewing/brew_screen.dart';
@@ -176,6 +178,12 @@ GoRouter appRouter(Ref ref) {
                       lotId: state.pathParameters['id']!,
                     ),
                   ),
+                  GoRoute(
+                    path: 'coffee-master',
+                    builder: (context, state) => CoffeeMasterLotScreen(
+                      lotId: state.pathParameters['id']!,
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -224,6 +232,10 @@ GoRouter appRouter(Ref ref) {
           GoRoute(
             path: AppRoutes.admin,
             builder: (context, state) => const AdminScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.brandManager,
+            builder: (context, state) => const BrandManagerScreen(),
           ),
         ],
       ),

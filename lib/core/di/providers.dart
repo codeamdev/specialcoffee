@@ -31,6 +31,22 @@ import 'package:special_coffee/domain/repositories/harvest_repository.dart';
 import 'package:special_coffee/domain/repositories/lot_repository.dart';
 import 'package:special_coffee/domain/repositories/milling_repository.dart';
 import 'package:special_coffee/domain/repositories/washing_repository.dart';
+// Block G — Coffee Master
+import 'package:special_coffee/data/repositories/physical_analysis_repository_local.dart';
+import 'package:special_coffee/data/repositories/roast_profile_repository_local.dart';
+import 'package:special_coffee/data/repositories/cupping_evaluation_repository_local.dart';
+import 'package:special_coffee/domain/repositories/physical_analysis_repository.dart';
+import 'package:special_coffee/domain/repositories/roast_profile_repository.dart';
+import 'package:special_coffee/domain/repositories/cupping_evaluation_repository.dart';
+// Block H — Brand Manager
+import 'package:special_coffee/data/repositories/green_inventory_repository_local.dart';
+import 'package:special_coffee/data/repositories/roasted_inventory_repository_local.dart';
+import 'package:special_coffee/data/repositories/commercial_product_repository_local.dart';
+import 'package:special_coffee/data/repositories/lot_certification_repository_local.dart';
+import 'package:special_coffee/domain/repositories/green_inventory_repository.dart';
+import 'package:special_coffee/domain/repositories/roasted_inventory_repository.dart';
+import 'package:special_coffee/domain/repositories/commercial_product_repository.dart';
+import 'package:special_coffee/domain/repositories/lot_certification_repository.dart';
 import 'package:special_coffee/presentation/providers/auth_provider.dart';
 
 part 'providers.g.dart';
@@ -149,3 +165,52 @@ SyncService syncService(Ref ref) => SyncService(
       LocalSyncDataSource(ref.watch(appDatabaseProvider)),
       ref.watch(apiClientProvider),
     );
+
+// ── Block G — Coffee Master ──────────────────────────────────────────────────
+
+@Riverpod(keepAlive: true)
+PhysicalAnalysisRepository physicalAnalysisLocalRepo(Ref ref) {
+  final db     = ref.watch(appDatabaseProvider);
+  final userId = ref.watch(currentUserIdProvider);
+  return PhysicalAnalysisLocalRepository(db.physicalAnalysisDao, userId);
+}
+
+@Riverpod(keepAlive: true)
+RoastProfileRepository roastProfileLocalRepo(Ref ref) {
+  final db     = ref.watch(appDatabaseProvider);
+  final userId = ref.watch(currentUserIdProvider);
+  return RoastProfileLocalRepository(db.roastProfileDao, userId);
+}
+
+@Riverpod(keepAlive: true)
+CuppingEvaluationRepository cuppingEvaluationLocalRepo(Ref ref) {
+  final db     = ref.watch(appDatabaseProvider);
+  final userId = ref.watch(currentUserIdProvider);
+  return CuppingEvaluationLocalRepository(db.cuppingEvaluationDao, userId);
+}
+
+// ── Block H — Brand Manager ──────────────────────────────────────────────────
+
+@Riverpod(keepAlive: true)
+GreenInventoryRepository greenInventoryLocalRepo(Ref ref) {
+  final db = ref.watch(appDatabaseProvider);
+  return GreenInventoryLocalRepository(db.greenInventoryDao);
+}
+
+@Riverpod(keepAlive: true)
+RoastedInventoryRepository roastedInventoryLocalRepo(Ref ref) {
+  final db = ref.watch(appDatabaseProvider);
+  return RoastedInventoryLocalRepository(db.roastedInventoryDao);
+}
+
+@Riverpod(keepAlive: true)
+CommercialProductRepository commercialProductLocalRepo(Ref ref) {
+  final db = ref.watch(appDatabaseProvider);
+  return CommercialProductLocalRepository(db.commercialProductDao);
+}
+
+@Riverpod(keepAlive: true)
+LotCertificationRepository lotCertificationLocalRepo(Ref ref) {
+  final db = ref.watch(appDatabaseProvider);
+  return LotCertificationLocalRepository(db.lotCertificationDao);
+}
