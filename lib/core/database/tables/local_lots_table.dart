@@ -21,14 +21,20 @@ class LocalLots extends Table {
   TextColumn     get region           => text().withDefault(const Constant(''))();
   // Orphaned NOT NULL column from v1 schema — kept with default to satisfy constraint.
   TextColumn     get processType      => text().named('process_type').withDefault(const Constant(''))();
+  // TODO(producto): G-1/D-12 — decidir destino (farm_plots vs lots). Bloqueado en UI. No sincronizar hasta resolución.
   RealColumn     get latitude         => real().nullable()();
+  // TODO(producto): G-1/D-12 — decidir destino (farm_plots vs lots). Bloqueado en UI. No sincronizar hasta resolución.
   RealColumn     get longitude        => real().nullable()();
+  // TODO(producto): G-1/D-12 — decidir destino (farm_plots vs lots). Bloqueado en UI. No sincronizar hasta resolución.
   RealColumn     get farmAreaHa       => real().named('farm_area_ha').nullable()();
   DateTimeColumn get createdAt        => dateTime().named('created_at')();
   TextColumn     get notes            => text().nullable()();
   DateTimeColumn get deletedAt        => dateTime().named('deleted_at').nullable()();
+  // TODO(producto): G-1/D-12 — decidir destino (farm_plots vs lots). Bloqueado en UI. No sincronizar hasta resolución.
   TextColumn     get blendVarietyIds  => text().named('blend_variety_ids').nullable().customConstraint('NULLABLE')();
+  // TODO(producto): G-1/D-12 — decidir destino (farm_plots vs lots). Bloqueado en UI. No sincronizar hasta resolución.
   IntColumn      get plantAgeYears    => integer().named('plant_age_years').nullable().customConstraint('NULLABLE')();
+  // TODO(producto): G-1/D-12 — decidir destino (farm_plots vs lots). Bloqueado en UI. No sincronizar hasta resolución.
   TextColumn     get plantType        => text().named('plant_type').nullable().customConstraint('NULLABLE')();
   DateTimeColumn get syncedAt         => dateTime().named('synced_at').nullable()();
 

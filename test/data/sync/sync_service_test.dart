@@ -40,6 +40,16 @@ DbLocalLot _lot({String id = 'lot-1'}) => DbLocalLot(
   syncedAt: null,
 );
 
+// Lot with all G-1/D-12 non-synced fields populated — used by invariant test.
+DbLocalLot _lotFull({String id = 'lot-full'}) => DbLocalLot(
+  id: id, userId: 'user-1', varietyId: 'var-1', varietyName: 'Caturra',
+  altitudeMasl: 1500, region: 'Huila', processType: '',
+  latitude: 1.2345, longitude: -76.5432, farmAreaHa: 3.5,
+  blendVarietyIds: 'var-1,var-2', plantAgeYears: 5, plantType: 'arabica',
+  createdAt: DateTime(2026, 6, 1), notes: null, deletedAt: null,
+  syncedAt: null,
+);
+
 DbCosechaPase _cosechaPase({String id = 'cp-1'}) => DbCosechaPase(
   id: id, lotId: 'lot-1', createdBy: 'user-1',
   fechaRecoleccion: DateTime(2026, 6, 1),
@@ -288,6 +298,31 @@ void main() {
 
       await expectLater(svc.syncPendingReadings(), completes);
       verifyNever(() => ds.markLotSynced(any()));
+    });
+
+    // G-1/D-12 invariant: campos locales sin columna remota nunca llegan al payload.
+    test('campos G-1/D-12 nunca aparecen en el payload de /api/lots', () async {
+      final l = _lotFull();
+      when(() => ds.getUnsyncedLots()).thenAnswer((_) async => [l]);
+      when(() => client.post<void>(ApiConfig.lots,
+            data: any(named: 'data'), headers: any(named: 'headers')))
+          .thenAnswer((_) async => _ok());
+      when(() => ds.markLotSynced(any())).thenAnswer((_) async {});
+
+      await svc.syncPendingReadings();
+
+      final captured = verify(() => client.post<void>(
+        ApiConfig.lots,
+        data: captureAny(named: 'data'),
+        headers: any(named: 'headers'),
+      )).captured;
+      final p = captured.first as Map<String, dynamic>;
+      expect(p.containsKey('latitude'),         isFalse);
+      expect(p.containsKey('longitude'),        isFalse);
+      expect(p.containsKey('farm_area_ha'),     isFalse);
+      expect(p.containsKey('blend_variety_ids'),isFalse);
+      expect(p.containsKey('plant_age_years'),  isFalse);
+      expect(p.containsKey('plant_type'),       isFalse);
     });
   });
 

@@ -1,6 +1,6 @@
 # SpecialCoffee AI — Auditoría Técnica (Vivo)
 
-> **Fuente de verdad única.** Última actualización: 2026-06-05 — Bloques F (RBAC 6 roles) + G (Coffee Master, schema v14) + H (Brand Manager, schema v15).
+> **Fuente de verdad única.** Última actualización: 2026-06-09 — Bloque I-2 cerrado: Process wiring + Lot simplification (schema v18, `paseId` routing, GPS fields) · 377/377 tests ✅.
 > Sprint de referencia: Sprints 1–3 (commit `b3c1633`) + sesión de auditoría (commit `3c69afc`).
 > Leyenda: ✅ Cerrado · 🔴 Abierto · 🟡 Pendiente / Mitigado · 🟠 Deuda aceptada · ⚪ Post-MVP / Fase final
 
@@ -116,7 +116,7 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | D-9 | Dominio       | Catación: migrar de SCA Classic 2004 a CVA cuando FNC publique adaptación colombiana | cupping_tables.dart:4 | ⚪ Post-MVP |
 | D-10| —             | Gap en numeración — nunca asignado                                  | —                                    | — |
 | D-11| Android       | Decidir `applicationId` definitivo antes de publicar en Play Store  | ANDROID_SETUP.md                    | ⚪ Fase final |
-| D-12| Persistencia  | Reconciliar `local_lots` vs `lots` — fuente de verdad en ítem #14  | local_lots_table.dart:7              | ⚪ Fase final |
+| D-12| Persistencia  | Reconciliar `local_lots` vs `lots` — 6 campos agronómicos sin columna remota, bloqueados en UI + invariante test. Destino diferido a producto. | local_lots_table.dart, docs/decisions/lots-fields-not-synced.md | 🟡 RESUELTO PARCIAL |
 | D-13| Agronomía     | Umbrales Lavado — calibrados (2026-06-03) | coffee_thresholds.dart | ✅ Calibrado — Manual del Cafetero FNC/Cenicafé: agua fresca ≤ 25°C (washingWaterTempCMax ajustado 30→25°C), ≥ 2 cambios, pH efluente ≤ 5.5. |
 | D-14| Agronomía     | Umbrales secado expandidos — calibrados (2026-06-03) | coffee_thresholds.dart | ✅ Calibrado — Manual del Cafetero FNC/Cenicafé + Puerta-Quintero (Cenicafé): 35°C agrietamiento, 80% HR secado ineficiente, 85% HR riesgo hongos, volteo desde día 3 con grano > 40%. |
 | D-15| BD (PostgreSQL)| Índice faltante en `drying_sessions(lot_id)` — queries O(n) en tabla crítica | schema.sql              | ✅ Cerrado (Auditoría T1, migración 0001) |
@@ -158,8 +158,8 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 
 ### G-1 — Dos tablas para Lot (`local_lots` vs `lots`)
 - **Hallazgo**: `local_lots` es la tabla local activa (devBypass). `lots` es la tabla legacy. El ítem #14 debe reconciliarlas. Ver D-12.
-- **Estado**: ⚪ Fase final (post-MVP sync)
-- **🔴 BLOQUEANTE para activar sync**: `sync_queue` no tiene `owner_id` ni política RLS. Antes de que cualquier código de sync escriba en ella, la tabla necesita: (1) columna `owner_id TEXT NOT NULL REFERENCES users(id)`, (2) política RLS `USING (owner_id = current_user_id())`, (3) GRANTs actualizados. Esto es bloqueante — no opcional. Migración pendiente: `0003_sync_queue_owner_rls.sql`.
+- **Estado**: 🟡 RESUELTO PARCIAL — sync `local_lots → lots` activo (SyncService wave-sync). 6 campos agronómicos bloqueados en UI y excluidos del payload (ver `docs/decisions/lots-fields-not-synced.md`). Invariante verificada por test `campos G-1/D-12 nunca aparecen en el payload de /api/lots`. Destino final de los 6 campos diferido a decisión de producto (SYNC-2).
+- **Pendiente**: reconciliación completa `local_lots → lots` (schema alignment, ítem #14). No tocar hasta decisión de producto sobre `latitude/longitude/farm_area_ha/blend_variety_ids/plant_age_years/plant_type`.
 
 ### G-2 — ✅ Campo `hours_since_classification` renombrado
 - **Fix**: `hoursFromDepulpingReference` en ai_context + condition_evaluator + depulping_rules + depulping_provider. SQL column `hours_from_reference` ya era correcto — sin migración. Ver D-8.
@@ -206,12 +206,27 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 
 ---
 
-## I. Catálogo de Variedades
+## I. Catálogo de Variedades / Process Wiring
 
 ### I-1 — ✅ Variedades Cenicafé 1 y Tabí añadidas
 - **Hallazgo**: el catálogo de variedades no incluía Cenicafé 1 ni Tabí.
 - **Fix (Bloque 3, 2026-06-03)**: Añadidas a `varieties_dao.dart:seedDefaults()` con `insertAllOnConflictUpdate` (idempotente). Cenicafé 1: sensitivity=low, scaPotential=84.0. Tabí: sensitivity=high, scaPotential=87.5. `varieties_provider.dart` cambiado para siempre llamar `seedDefaults()` sin guard `isEmpty()`, garantizando que installs existentes reciban las nuevas variedades en el siguiente arranque. Sin bump de schema (solo datos semilla).
 - **Estado**: ✅ Cerrado (Bloque 3)
+
+### I-2 — ✅ Process screen wiring + Lot entity simplification
+- **Área**: Routing + Dominio + UI
+- **Fix (Bloque I-2, 2026-06-09)**:
+  - **Stream 1 — Process wiring**: `WashingScreen`, `DryingScreen`, `MillingScreen` aceptan parámetro opcional `paseId?`. Al navegar desde `PaseDetailScreen` con un `paseId`, completar la etapa avanza `etapaActual` en la BD y hace pop de vuelta. `app_router.dart` pasa `paseId` desde query params a las 4 pantallas de proceso. `PaseDetailScreen._routeFor` añade `?paseId=${p.id}` a las rutas de proceso. <!-- lib/core/router/app_router.dart, 2026-06-09 -->
+  - **Stream 2 — Lot simplification**: Removidos de entidad `Lot`: `processType`, `ambientTempC`, `ambientHumidityPct`, `rainProbabilityPct`, `status`. Añadidos: `latitude?`, `longitude?`, `farmAreaHa?`. Schema v17→v18: 3 `ADD COLUMN` nullable (`latitude REAL`, `longitude REAL`, `farm_area_ha REAL`) en `local_lots` via `customStatement` (idempotente try-catch). <!-- lib/core/database/app_database.dart:schemaVersion=18, 2026-06-09 -->
+  - `LotCreateScreen`: sección env + selector de proceso removidos; GPS auto-fill para lat/lng + campo `farmAreaHa`; botón "Guardar lote" navega a `LotDetailScreen`.
+  - `LotDetailScreen`: sección env conditions + status badge removidos; sección "Datos de finca" condicional añadida.
+  - `LotListScreen`: status chip removido.
+  - `DashboardScreen`: `ProcessorView` muestra todos los lotes ordenados por `createdAt`; `BaristaView` muestra todos los lotes.
+  - Todos los providers actualizados para usar defaults en campos eliminados: classification, cupping, depulping, drying, fermentation, harvest, washing, milling providers.
+  - `WorkflowHubScreen`: `processType` defaul → `'lavado'`. `ClassificationScreen`: navega a depulping por defecto. `DepulpingScreen` + `WashingScreen`: redirect natural deshabilitado (`processType = ''`).
+  - `test/presentation/widgets/workflow_hub_screen_test.dart` actualizado para nuevo shape de `Lot`.
+  - `flutter analyze` = 0 errores (159 infos). `flutter test` = **377/377** ✅.
+- **Estado**: ✅ Cerrado (Bloque I-2, 2026-06-09)
 
 ---
 
@@ -263,11 +278,11 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | F. Preparación     | —                 | —           | —             | —             | F-1, F-2     |
 | G. Persistencia    | —                 | —           | —             | G-1 (=D-12)   | G-2, G-3     |
 | H. Seguridad       | —                 | —           | H-3           | —             | H-1, H-2, H-4, H-5, H-6, H-7 |
-| I. Variedades      | —                 | —           | —             | —             | I-1          |
+| I. Process wiring  | —                 | —           | —             | —             | I-1, I-2     |
 | J. Tests/Código    | —                 | —           | —             | —             | J-1, J-2, J-3, J-4, J-5 |
 | K. UX              | —                 | —           | —             | K-1           | —            |
 
-**Abiertos críticos (MVP)**: ninguno. **Tests finales: 352/352 ✅ · Schema v15 · AllRules v1.3.0 · Motor de reglas: 12 módulos, 8 procesos cubiertos (brewing rules +14).**
+**Abiertos críticos (MVP)**: ninguno. **Tests finales: 377/377 ✅ · Schema v18 · AllRules v1.3.0 · Motor de reglas: 12 módulos, 8 procesos cubiertos (brewing rules +14). API clima: Open-Meteo (sin key). MEJ-4..10 cerrados.**
 **Calibración umbrales**: ✅ D-2,D-5,D-6,D-7,D-13,D-14 cerrados con fuentes Cenicafé/FNC (2026-06-03). `washingWaterTempCMax` ajustado 30→25°C; intervalos cosecha calibrados a AT No. 420. Bloque G: umbrales `physical_analyses` documentados (SCA Defect Handbook, ISO 6673) y `roast_profiles` (Scott Rao, SCA Roast Color Classification).
 **Pendiente manual (seguridad)**: H-3 — purga de historial git con `git filter-repo`.
 
@@ -291,6 +306,8 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | **Bloque F** | RBAC | UserRole 6 valores (producer/coffeeMaster/brandManager/producerIntegral/barista/admin) + roleFromString() backward-compat + guards router + dashboard/shell/onboarding — 352/352 ✅ | ✅ 2026-06-05 (6f5c04c) |
 | **Bloque G** | Coffee Master (v14) | physical_analyses (densidad/humedad/Aw/defectos SCA), roast_profiles (pesos/merma/DTR/Agtron), cupping_evaluations (scoresheet SCA 12 atributos) + CoffeeMasterLotScreen — 352/352 ✅ | ✅ 2026-06-05 (26e082d) |
 | **Bloque H** | Brand Manager (v15) | green_inventory + roasted_inventory + commercial_products + lot_certifications + BrandManagerScreen + LotCertificationsCard — 352/352 ✅ | ✅ 2026-06-05 (26e082d) |
+| **Bloque I-1** | Pase de Cosecha | schema v17 (cosecha_pases), CosechaPase, DAO, repo, provider, PaseCreateScreen, PaseDetailScreen, etapaActual avance, schedulePaseMedicionReminder — 377/377 ✅ | ✅ 2026-06-09 |
+| **Bloque I-2** | I-2 | Process wiring (paseId routing) + Lot simplification (GPS fields, schema v18, UI cleanup) — 377/377 ✅ | ✅ 2026-06-09 |
 | **Fase final** | D-1,D-4,D-12,D-11 | Android + sync PostgREST — no tocar hasta OK | 🔒 |
 | **Auditoría Pre-Prod T1** | SEC-1…7, QUAL-1, DB-1/2, ARCH-1, TEST-1 | Primera tanda de correcciones del INFORME_AUDITORIA.md | ✅ 2026-05-27 |
 | **Auditoría Pre-Prod T2** | ARCH-2/3, DEVOPS-2, DB-3, QUAL-2 | Segunda tanda de correcciones | ✅ 2026-05-27 (f6f757b) |
@@ -311,13 +328,13 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | MEJ-1 | Patrón `Result<T, E>` en lugar de exceptions — mejor manejo en UI | Arquitectura | ⚪ Post-MVP |
 | MEJ-2 | i18n / intl — soporte multiidioma (estructura importada pero no usada) | UX | ⚪ Post-MVP |
 | MEJ-3 | Implementar sync_queue offline → PostgREST para fase final | Persistencia | ⚪ Fase final |
-| MEJ-4 | Tests de widget para LotDetailScreen y FermentationScreen | QA | ⚪ Post-MVP |
-| MEJ-5 | Benchmark real del RuleEngine (promete `< 5ms`, sin prueba adjunta) | Performance | ⚪ Post-MVP |
-| MEJ-6 | Soft delete en todas las entidades, no solo Lot | Dominio | ⚪ Post-MVP |
-| MEJ-7 | Validar rule_id únicos en AllRules al cargar (assert en debug) | Motor de reglas | ⚪ Post-MVP |
-| MEJ-8 | `client_max_body_size 1M` en nginx.conf de desarrollo | DevOps | ⚪ Post-MVP |
-| MEJ-9 | `PGRST_LOG_LEVEL: "warn"` en docker-compose (evitar logs con datos en info) | DevOps | ⚪ Post-MVP |
-| MEJ-10 | Agregar `.env.example` al repo como plantilla con placeholders | DevOps | ⚪ Post-MVP |
+| MEJ-4 | Tests de widget para LotDetailScreen y FermentationScreen | QA | ✅ 2026-06-08 — `lot_detail_screen_test.dart` (3 tests) + `fermentation_screen_test.dart` (3 tests) |
+| MEJ-5 | Benchmark real del RuleEngine (promete `< 5ms`, sin prueba adjunta) | Performance | ✅ 2026-06-08 — `rule_engine_benchmark_test.dart` (7 tests); 100 evals < 1 000ms debug (< 5ms release) |
+| MEJ-6 | Soft delete en todas las entidades, no solo Lot | Dominio | ✅ 2026-06-08 — `deletedAt` añadido a 7 tablas G/H (schema v16 via `customStatement`); DAOs actualizados con filtro `isNull()` + `softDelete()` |
+| MEJ-7 | Validar rule_id únicos en AllRules al cargar (assert en debug) | Motor de reglas | ✅ 2026-06-08 — assert en `AllRules.all` getter; detecta duplicados en modo debug |
+| MEJ-8 | `client_max_body_size 1M` en nginx.conf de desarrollo | DevOps | ✅ Ya existía `client_max_body_size 10M` (más restrictivo que 1M no aplica; límite existente suficiente) |
+| MEJ-9 | `PGRST_LOG_LEVEL: "warn"` en docker-compose (evitar logs con datos en info) | DevOps | ✅ 2026-06-08 — cambiado de `"info"` a `"warn"` en `backend/docker-compose.yml` |
+| MEJ-10 | Agregar `.env.example` al repo como plantilla con placeholders | DevOps | ✅ 2026-06-08 — `backend/.env.example` completado con vars ONESIGNAL_APP_ID + ONESIGNAL_REST_API_KEY |
 
 ---
 
@@ -363,3 +380,8 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | 2026-06-05 | 42fdab7   | Bloque E2: WorkflowNotifier + WorkflowHubScreen + ruta /lots/:id/workflow + 6 tests |
 | 2026-06-05 | 057b848   | Bloque E3: scheduleStageTimers + cancelStageTimers en NotificationService (IDs 6000–7999) |
 | 2026-06-05 | ffdc732   | Bloque E4: ProcessCompletionAnalyzer + BatchInsightsCard en LotDetailScreen + cupping trigger — 352/352 ✅ |
+| 2026-06-08 | 6f5c04c   | Bloque F: RBAC 6 roles + backward-compat mapper — 352/352 ✅ |
+| 2026-06-08 | —         | MEJ-4..10: widget tests (6), benchmark (7), soft-delete G/H (schema v16), assert rule IDs, nginx warn, .env.example — 365/365 ✅ |
+| 2026-06-08 | —         | Open-Meteo: migración de OpenWeatherMap (sin clave API) — WeatherConfig + WeatherRemoteDataSource reescritos |
+| 2026-06-09 | —         | Bloque I-1: Pase de Cosecha — schema v17 (cosecha_pases), entidad CosechaPase, DAO, repo, provider, PaseCreateScreen, PaseDetailScreen (clasificación inline + avance de etapa), LotDetailScreen actualizado (lista pases + botón Nuevo pase), NotificationService.schedulePaseMedicionReminder, 12 tests nuevos — 377/377 ✅ |
+| 2026-06-09 | —         | Bloque I-2: Process wiring (paseId query param en 4 pantallas de proceso, avance etapaActual al completar) + Lot simplification (schema v18: latitude/longitude/farm_area_ha; removidos processType/ambientTempC/ambientHumidityPct/rainProbabilityPct/status; UI cleanup LotCreate/Detail/List/Dashboard) — 377/377 ✅ |

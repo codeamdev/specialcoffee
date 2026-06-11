@@ -1,7 +1,7 @@
 # Decisión: Campos de lote sin sincronización con PostgreSQL
 
 **Fecha:** 2026-06-10  
-**Estado:** Activo — pendiente de revisión de producto
+**Estado:** BLOQUEADO EN UI — pendiente de revisión de producto (G-1 / D-12 resuelto parcial)
 
 ---
 
@@ -54,3 +54,11 @@ Revisar con el equipo de producto si `latitude`, `longitude`, `farm_area_ha`, `b
 4. Eliminar este disclaimer
 
 Deuda registrada en `AUDIT.md` como `SYNC-2`.
+
+---
+
+## Cobertura de tests
+
+- **Test invariante** (`test/data/sync/sync_service_test.dart`): `campos G-1/D-12 nunca aparecen en el payload de /api/lots`
+  — usa `_lotFull()` (todos los 6 campos no nulos) y verifica que ninguna clave de los 6 campos aparezca en el `Map` enviado a PostgREST.
+- **Tests UI** (`test/presentation/widgets/lot_create_screen_sync_test.dart`): 5 tests verifican inputs deshabilitados, iconos sync_disabled y disclaimers visibles.
