@@ -42,15 +42,36 @@ dependencies:
   logger: ^2.5.0
   equatable: ^2.0.5
 
+  # Firebase — core + push notifications (Android / iOS only)
+  firebase_core: ^3.6.0
+  firebase_messaging: ^15.1.3
+
+  # OneSignal — push notifications cross-platform (Android / iOS)
+  onesignal_flutter: ^5.2.0
+
+  # GPS — altitud y coordenadas para clima automático
+  geolocator: ^13.0.2
+
   # Notifications + timezone (zonedSchedule — works with app closed)
   flutter_local_notifications: ^18.0.1
   timezone: ^0.9.4
   flutter_timezone: ^1.0.4
 
+  # Local key-value cache (reglas IA, clima, preferencias)
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
   # UI helpers
   cached_network_image: ^3.4.1
   shimmer: ^3.0.0
   fl_chart: ^0.69.0
+
+  # QR code generation
+  qr_flutter: ^4.1.0
+
+  # PDF export
+  pdf: ^3.11.1
+  printing: ^5.13.1
 
 dev_dependencies:
   flutter_test:
@@ -64,6 +85,7 @@ dev_dependencies:
   riverpod_generator: ^4.0.0
   json_serializable: ^6.8.0
   drift_dev: ^2.21.0
+  sqlite3: ^2.9.4
 
   # Habilitados 2026-05-27: resuelven con custom_lint 0.8.1 + riverpod_lint 3.1.0
   # y analyzer 8.4.0 (compatible con el ecosistema actual).
@@ -80,23 +102,23 @@ flutter:
     - assets/icons/
     - assets/rules/
 
-  # fonts: (uncomment after adding font files to assets/fonts/)
-  #   - family: DMSerifDisplay
-  #     fonts:
-  #       - asset: assets/fonts/DMSerifDisplay-Regular.ttf
-  #       - asset: assets/fonts/DMSerifDisplay-Italic.ttf
-  #         style: italic
-  #   - family: Inter
-  #     fonts:
-  #       - asset: assets/fonts/Inter-Regular.ttf
-  #       - asset: assets/fonts/Inter-Medium.ttf
-  #         weight: 500
-  #       - asset: assets/fonts/Inter-SemiBold.ttf
-  #         weight: 600
-  #       - asset: assets/fonts/Inter-Bold.ttf
-  #         weight: 700
-  #   - family: JetBrainsMono
-  #     fonts:
-  #       - asset: assets/fonts/JetBrainsMono-Regular.ttf
-  #       - asset: assets/fonts/JetBrainsMono-Medium.ttf
-  #         weight: 500
+  fonts:
+    - family: DMSerifDisplay
+      fonts:
+        - asset: assets/fonts/DMSerifDisplay-Regular.ttf
+        - asset: assets/fonts/DMSerifDisplay-Italic.ttf
+          style: italic
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-Regular.ttf
+        - asset: assets/fonts/JetBrainsMono-Medium.ttf
+          weight: 500
