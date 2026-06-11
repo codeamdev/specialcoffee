@@ -257,7 +257,7 @@ void main() {
       verify(() => ds.markLotSynced(l.id)).called(1);
     });
 
-    test('payload mapea user_id → owner_id y envía status=activo', () async {
+    test('payload mapea user_id → owner_id y omite status/process_type', () async {
       final l = _lot(id: 'lot-abc');
       when(() => ds.getUnsyncedLots()).thenAnswer((_) async => [l]);
       when(() => client.post<void>(ApiConfig.lots,
@@ -275,7 +275,8 @@ void main() {
       final p = captured.first as Map<String, dynamic>;
       expect(p['id'],        'lot-abc');
       expect(p['owner_id'],  'user-1');
-      expect(p['status'],    'activo');
+      expect(p.containsKey('status'),       isFalse);
+      expect(p.containsKey('process_type'), isFalse);
       expect(p['variety_name'], 'Caturra');
     });
 
