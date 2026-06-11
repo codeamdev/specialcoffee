@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:special_coffee/core/config/api_config.dart';
 
@@ -26,6 +27,23 @@ class ApiClient {
       headers: {'Content-Type': 'application/json'},
     ));
 
+    _dio.interceptors.add(InterceptorsWrapper(
+      onRequest: _onRequest,
+      onError: _onError,
+    ));
+  }
+
+  /// Constructs an ApiClient with a pre-loaded token — no platform channels needed.
+  /// The in-memory token is returned by [getAccessToken] without touching storage.
+  @visibleForTesting
+  ApiClient.withToken(String token)
+      : _storage = const FlutterSecureStorage() {
+    _accessToken = token;
+    _dio = Dio(BaseOptions(
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 30),
+      headers: {'Content-Type': 'application/json'},
+    ));
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: _onRequest,
       onError: _onError,
@@ -138,8 +156,9 @@ class ApiClient {
   Future<Response<T>> get<T>(String url, {Map<String, dynamic>? params}) =>
       _dio.get<T>(url, queryParameters: params);
 
-  Future<Response<T>> post<T>(String url, {Object? data}) =>
-      _dio.post<T>(url, data: data);
+  Future<Response<T>> post<T>(String url, {Object? data, Map<String, dynamic>? headers}) =>
+      _dio.post<T>(url, data: data,
+          options: headers != null ? Options(headers: headers) : null);
 
   Future<Response<T>> patch<T>(String url, {Object? data}) =>
       _dio.patch<T>(url, data: data);
