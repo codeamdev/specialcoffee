@@ -29,4 +29,13 @@ class LotDao extends DatabaseAccessor<AppDatabase> with _$LotDaoMixin {
   Future<void> softDelete(String id) =>
       (update(localLots)..where((t) => t.id.equals(id)))
           .write(LocalLotsCompanion(deletedAt: Value(DateTime.now())));
+
+  Future<List<DbLocalLot>> getUnsyncedLots() =>
+      (select(localLots)
+            ..where((t) => t.syncedAt.isNull() & t.deletedAt.isNull()))
+          .get();
+
+  Future<void> markLotSynced(String id) =>
+      (update(localLots)..where((t) => t.id.equals(id)))
+          .write(LocalLotsCompanion(syncedAt: Value(DateTime.now().toUtc())));
 }

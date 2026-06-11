@@ -7,23 +7,26 @@ class ApiConfig {
 
   // ── Dev bypass: poner en true si el backend no está corriendo ────────────
   // LOCAL TESTING ONLY — no commitear con true
+  // Para desarrollo local: usa email barista@x.com / processor@x.com / farmer@x.com
   static const bool devBypass = false;
 
-  // En local: dos puertos distintos (sin Nginx)
-  // En prod:  un solo dominio con Nginx como proxy
-  static const String _authBase = _local
-      ? 'http://127.0.0.1:8000'              // FastAPI directo
-      : 'https://specialcoffee.app';         // Nginx → /auth/ → puerto 8000
+  // Siempre a través de Nginx — misma estructura local y producción.
+  // Local:  http://127.0.0.1  (nginx en puerto 80 vía Docker Compose)
+  // Prod:   https://specialcoffee.app  (nginx en 443 vía certbot/LB)
+  static const String _base = _local
+      ? 'http://127.0.0.1'
+      : 'https://specialcoffee.app';
 
-  static const String _pgrstBase = _local
-      ? 'http://127.0.0.1:3001'              // PostgREST directo
-      : 'https://specialcoffee.app/api';     // Nginx → /api/ → puerto 3000 (strip prefix)
+  static const String _authBase = _base;          // → /auth/*
+  static const String _pgrstBase = '$_base/api';  // → /api/* (nginx strip prefix)
 
   // ── Auth endpoints (FastAPI) ──────────────────────────────────────────────
-  static const String register = '$_authBase/auth/register';
-  static const String login    = '$_authBase/auth/login';
-  static const String refresh  = '$_authBase/auth/refresh';
-  static const String me       = '$_authBase/auth/me';
+  static const String register       = '$_authBase/auth/register';
+  static const String login          = '$_authBase/auth/login';
+  static const String refresh        = '$_authBase/auth/refresh';
+  static const String me             = '$_authBase/auth/me';
+  static const String registerDevice = '$_authBase/auth/device';
+  static const String fcmToken       = '$_authBase/users/fcm-token';
 
   // ── PostgREST endpoints ───────────────────────────────────────────────────
   static const String lots                 = '$_pgrstBase/lots';
@@ -37,4 +40,10 @@ class ApiConfig {
   static const String alertEvents          = '$_pgrstBase/alert_events';
   static const String varieties            = '$_pgrstBase/coffee_varieties_catalog';
   static const String aiUserProfiles       = '$_pgrstBase/ai_user_profiles';
+
+  // ── Sync endpoints (nuevas tablas) ────────────────────────────────────────
+  static const String cosechaPases           = '$_pgrstBase/cosecha_pases';
+  static const String washingSessions        = '$_pgrstBase/washing_sessions';
+  static const String millingSessions        = '$_pgrstBase/milling_sessions';
+  static const String classificationSessions = '$_pgrstBase/classification_sessions';
 }

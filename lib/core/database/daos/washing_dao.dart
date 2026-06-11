@@ -18,4 +18,12 @@ class WashingDao extends DatabaseAccessor<AppDatabase>
 
   Future<void> upsert(WashingSessionsCompanion session) =>
       into(washingSessions).insertOnConflictUpdate(session);
+
+  Future<List<DbWashingSession>> getUnsyncedSessions() =>
+      (select(washingSessions)..where((t) => t.syncedAt.isNull())).get();
+
+  Future<void> markWashingSessionSynced(String id) =>
+      (update(washingSessions)..where((t) => t.id.equals(id)))
+          .write(WashingSessionsCompanion(
+              syncedAt: Value(DateTime.now().toUtc())));
 }

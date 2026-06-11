@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:special_coffee/core/database/daos/cosecha_pase_dao.dart';
 import 'package:special_coffee/core/database/daos/batch_insights_dao.dart';
 import 'package:special_coffee/core/database/daos/lot_stage_log_dao.dart';
 import 'package:special_coffee/core/database/daos/brew_session_detail_dao.dart';
@@ -28,6 +29,7 @@ import 'package:special_coffee/core/database/daos/green_inventory_dao.dart';
 import 'package:special_coffee/core/database/daos/roasted_inventory_dao.dart';
 import 'package:special_coffee/core/database/daos/commercial_product_dao.dart';
 import 'package:special_coffee/core/database/daos/lot_certification_dao.dart';
+import 'package:special_coffee/core/database/tables/cosecha_pases_table.dart';
 import 'package:special_coffee/core/database/tables/batch_insights_table.dart';
 import 'package:special_coffee/core/database/tables/lot_stage_log_table.dart';
 import 'package:special_coffee/core/database/tables/brew_session_details_table.dart';
@@ -61,6 +63,7 @@ part 'app_database.g.dart';
   tables: [
     Lots,
     LocalLots,
+    CosechaPases,
     FermentationSessions,
     FermentationReadings,
     DryingSessions,
@@ -90,6 +93,7 @@ part 'app_database.g.dart';
     LotCertifications,
   ],
   daos: [
+    CosechaPaseDao,
     FermentationDao, DryingDao, HarvestDao, ClassificationDao,
     DepulpingDao, CuppingDao, LotDao, WashingDao, VarietiesDao,
     BrewingSessionDao, MillingDao, BatchInsightsDao,
@@ -106,7 +110,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 21;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -163,6 +167,80 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(roastedInventories);
             await m.createTable(commercialProducts);
             await m.createTable(lotCertifications);
+          }
+          // MEJ-6: soft delete on G/H tables (nullable INTEGER = DateTime in Drift/SQLite)
+          // try-catch per statement: fresh installs that ran onCreate when Dart defs
+          // already had deleted_at (but stored schemaVersion < 16) would fail otherwise.
+          if (from < 16) {
+            for (final stmt in const [
+              'ALTER TABLE physical_analyses   ADD COLUMN deleted_at INTEGER',
+              'ALTER TABLE roast_profiles      ADD COLUMN deleted_at INTEGER',
+              'ALTER TABLE cupping_evaluations ADD COLUMN deleted_at INTEGER',
+              'ALTER TABLE green_inventory     ADD COLUMN deleted_at INTEGER',
+              'ALTER TABLE roasted_inventory   ADD COLUMN deleted_at INTEGER',
+              'ALTER TABLE commercial_products ADD COLUMN deleted_at INTEGER',
+              'ALTER TABLE lot_certifications  ADD COLUMN deleted_at INTEGER',
+            ]) {
+              try {
+                await m.database.customStatement(stmt);
+              } catch (_) {
+                // Column already exists — idempotent
+              }
+            }
+          }
+          // Bloque I-1: Pase de Cosecha — unidad de proceso húmedo por lote
+          if (from < 17) {
+            await m.createTable(cosechaPases);
+          }
+          // Bloque I-2: Simplificación de Lot — lat/lng/farmAreaHa
+          if (from < 18) {
+            for (final stmt in const [
+              'ALTER TABLE local_lots ADD COLUMN latitude REAL',
+              'ALTER TABLE local_lots ADD COLUMN longitude REAL',
+              'ALTER TABLE local_lots ADD COLUMN farm_area_ha REAL',
+            ]) {
+              try {
+                await m.database.customStatement(stmt);
+              } catch (_) {
+                // Column already exists — idempotent
+              }
+            }
+          }
+          // v19: blend_variety_ids for blend lots (comma-separated variety IDs)
+          if (from < 19) {
+            try {
+              await m.database.customStatement(
+                'ALTER TABLE local_lots ADD COLUMN blend_variety_ids TEXT',
+              );
+            } catch (_) {
+              // Column already exists — idempotent
+            }
+          }
+          // v20: plant_age_years and plant_type for agronomic tracking
+          if (from < 20) {
+            for (final stmt in const [
+              'ALTER TABLE local_lots ADD COLUMN plant_age_years INTEGER',
+              'ALTER TABLE local_lots ADD COLUMN plant_type TEXT',
+            ]) {
+              try {
+                await m.database.customStatement(stmt);
+              } catch (_) {
+                // Column already exists — idempotent
+              }
+            }
+          }
+          // v21: synced_at for lots + cosecha_pases sync
+          if (from < 21) {
+            for (final stmt in const [
+              'ALTER TABLE local_lots ADD COLUMN synced_at INTEGER',
+              'ALTER TABLE cosecha_pases ADD COLUMN synced_at INTEGER',
+            ]) {
+              try {
+                await m.database.customStatement(stmt);
+              } catch (_) {
+                // Column already exists — idempotent
+              }
+            }
           }
         },
       );

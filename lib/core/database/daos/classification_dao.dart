@@ -18,4 +18,14 @@ class ClassificationDao extends DatabaseAccessor<AppDatabase>
 
   Future<void> upsert(ClassificationSessionsCompanion session) =>
       into(classificationSessions).insertOnConflictUpdate(session);
+
+  Future<List<DbClassificationSession>> getUnsyncedSessions() =>
+      (select(classificationSessions)
+            ..where((t) => t.syncedAt.isNull()))
+          .get();
+
+  Future<void> markClassificationSessionSynced(String id) =>
+      (update(classificationSessions)..where((t) => t.id.equals(id)))
+          .write(ClassificationSessionsCompanion(
+              syncedAt: Value(DateTime.now().toUtc())));
 }

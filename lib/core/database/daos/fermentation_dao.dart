@@ -53,4 +53,44 @@ class FermentationDao extends DatabaseAccessor<AppDatabase>
             ..where((t) => t.sessionId.equals(sessionId))
             ..orderBy([(t) => OrderingTerm(expression: t.recordedAt)]))
           .watch();
+
+  Future<double> getAvgCompletedDurationH(String ownerId) async {
+    final result = await customSelect(
+      'SELECT AVG(actual_duration_h) AS avg_h FROM fermentation_sessions '
+      'WHERE owner_id = ? AND actual_duration_h IS NOT NULL',
+      variables: [Variable.withString(ownerId)],
+      readsFrom: {fermentationSessions},
+    ).getSingleOrNull();
+    return (result?.data['avg_h'] as num?)?.toDouble() ?? 0.0;
+  }
+
+  Future<double> getLastCompletedDurationH(String ownerId) async {
+    final row = await (select(fermentationSessions)
+          ..where((t) =>
+              t.ownerId.equals(ownerId) & t.actualDurationH.isNotNull())
+          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+          ..limit(1))
+        .getSingleOrNull();
+    return row?.actualDurationH ?? 0.0;
+  }
+
+  Future<List<DbFermentationReading>> getUnsyncedReadings() =>
+      (select(fermentationReadings)
+            ..where((t) => t.syncedAt.isNull()))
+          .get();
+
+  Future<void> markFermentationReadingSynced(String id) =>
+      (update(fermentationReadings)..where((t) => t.id.equals(id)))
+          .write(FermentationReadingsCompanion(
+              syncedAt: Value(DateTime.now().toUtc())));
+
+  Future<List<DbFermentationSession>> getUnsyncedSessions() =>
+      (select(fermentationSessions)
+            ..where((t) => t.syncedAt.isNull() & t.deletedAt.isNull()))
+          .get();
+
+  Future<void> markFermentationSessionSynced(String id) =>
+      (update(fermentationSessions)..where((t) => t.id.equals(id)))
+          .write(FermentationSessionsCompanion(
+              syncedAt: Value(DateTime.now().toUtc())));
 }

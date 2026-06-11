@@ -48,4 +48,22 @@ class DryingDao extends DatabaseAccessor<AppDatabase> with _$DryingDaoMixin {
             ..where((t) => t.sessionId.equals(sessionId))
             ..orderBy([(t) => OrderingTerm(expression: t.recordedAt)]))
           .watch();
+
+  Future<List<DbDryingReading>> getUnsyncedReadings() =>
+      (select(dryingReadings)..where((t) => t.syncedAt.isNull())).get();
+
+  Future<void> markDryingReadingSynced(String id) =>
+      (update(dryingReadings)..where((t) => t.id.equals(id)))
+          .write(DryingReadingsCompanion(
+              syncedAt: Value(DateTime.now().toUtc())));
+
+  Future<List<DbDryingSession>> getUnsyncedSessions() =>
+      (select(dryingSessions)
+            ..where((t) => t.syncedAt.isNull() & t.deletedAt.isNull()))
+          .get();
+
+  Future<void> markDryingSessionSynced(String id) =>
+      (update(dryingSessions)..where((t) => t.id.equals(id)))
+          .write(DryingSessionsCompanion(
+              syncedAt: Value(DateTime.now().toUtc())));
 }
