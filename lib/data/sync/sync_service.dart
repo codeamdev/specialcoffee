@@ -110,16 +110,16 @@ class SyncService {
             ApiConfig.lots,
             headers: _prefer,
             data: {
-              'id':           lot.id,
-              'owner_id':     lot.userId,
-              'variety_id':   lot.varietyId,
-              'variety_name': lot.varietyName,
+              'id':            lot.id,
+              'owner_id':      lot.userId,
+              'variety_id':    lot.varietyId,
+              'variety_name':  lot.varietyName,
               'altitude_masl': lot.altitudeMasl,
-              'region':       lot.region,
+              'region':        lot.region,
               if (lot.notes != null) 'notes': lot.notes,
-              'status':       'activo',
-              'process_type': '',
-              'created_at':   lot.createdAt.toUtc().toIso8601String(),
+              // 'status' omitted → PG default 'pending' (CHECK constraint rejects 'activo')
+              // 'process_type' omitted → PG default 'lavado' (CHECK constraint rejects '')
+              'created_at':    lot.createdAt.toUtc().toIso8601String(),
             },
           );
           await _dataSource.markLotSynced(lot.id);
