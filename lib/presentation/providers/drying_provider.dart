@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:special_coffee/ai_engine/models/ai_context.dart';
 import 'package:special_coffee/ai_engine/models/ai_rule.dart';
@@ -10,7 +10,7 @@ import 'package:special_coffee/presentation/providers/lot_provider.dart';
 
 part 'drying_provider.g.dart';
 
-// ── Domain ─────────────────────────────────────────────────────────────────
+// â”€â”€ Domain â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class DryingReading {
   const DryingReading({
@@ -30,7 +30,7 @@ class DryingReading {
   final DateTime recordedAt;
 }
 
-// ── State ──────────────────────────────────────────────────────────────────
+// â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class DryingState {
   const DryingState({
@@ -96,7 +96,7 @@ class DryingState {
       );
 }
 
-// ── Notifier ───────────────────────────────────────────────────────────────
+// â”€â”€ Notifier â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @riverpod
 class DryingNotifier extends _$DryingNotifier {
@@ -132,7 +132,7 @@ class DryingNotifier extends _$DryingNotifier {
         );
       } catch (e, st) {
         if (kDebugMode) debugPrint('[DryingProvider] _loadPersistedSession: $e\n$st');
-        // Persistence unavailable — start fresh in-memory session
+        // Persistence unavailable â€” start fresh in-memory session
       }
     });
   }
@@ -161,7 +161,7 @@ class DryingNotifier extends _$DryingNotifier {
         );
       } catch (e, st) {
         if (kDebugMode) debugPrint('[DryingProvider] createSession: $e\n$st');
-        state = state.copyWith(error: () => 'No se pudo iniciar la sesión: los datos no se guardarán.');
+        state = state.copyWith(error: () => 'No se pudo iniciar la sesiÃ³n: los datos no se guardarÃ¡n.');
       }
     }
 
@@ -224,8 +224,8 @@ class DryingNotifier extends _$DryingNotifier {
           ambientHumidityPct: ambientHumidityPct,
           uvIndex: uvIndex,
         );
-        // Sync to backend in background — never awaited, never blocks UI
-        ref.read(syncServiceProvider).syncPendingReadings();
+        // Sync to backend in background â€” never awaited, never blocks UI
+        ref.read(syncServiceProvider).syncPendingReadings().ignore();
       } catch (e, st) {
         if (kDebugMode) debugPrint('[DryingProvider] addReading persist: $e\n$st');
         state = state.copyWith(error: () => 'Lectura no guardada localmente. Revisa el almacenamiento.');

@@ -7,6 +7,8 @@ import 'package:special_coffee/domain/repositories/drying_repository.dart';
 import 'package:special_coffee/presentation/providers/ai_engine_provider.dart';
 import 'package:special_coffee/presentation/providers/drying_provider.dart';
 import 'package:special_coffee/presentation/providers/lot_provider.dart';
+import 'package:drift/native.dart';
+import 'package:special_coffee/core/database/app_database.dart';
 
 // ── Fake adapter ──────────────────────────────────────────────────────────────
 
@@ -130,6 +132,7 @@ ProviderContainer _container({
       aiEngineProvider.overrideWith((ref) async => engine),
       dryingLocalRepoProvider.overrideWith((ref) => fakeRepo),
       lotByIdProvider('LOT-001').overrideWith((ref) async => null),
+      appDatabaseProvider.overrideWith((ref) => AppDatabase.forTesting(NativeDatabase.memory())),
     ],
   );
 }

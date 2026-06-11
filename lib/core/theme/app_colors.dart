@@ -15,10 +15,11 @@ abstract final class AppColors {
   static const Color aiBlueContainer = Color(0xFFE8F1FC);
 
   // Role accent colors
-  static const Color roleFarmer = Color(0xFF4CAF50);
-  static const Color roleProcessor = Color(0xFFC68642);
-  static const Color roleBarista = Color(0xFF1565C0);
+  static const Color roleFarmer       = Color(0xFF4CAF50);
+  static const Color roleProcessor    = Color(0xFFC68642);
+  static const Color roleBarista      = Color(0xFF1565C0);
   static const Color roleEntrepreneur = Color(0xFF7B1FA2);
+  static const Color roleAdmin        = Color(0xFF37474F);
 
   // Semantic
   static const Color success = Color(0xFF2E7D32);
@@ -44,5 +45,10 @@ abstract final class AppColors {
   static const Color onSurface = Color(0xFF1A0F0A);
   static const Color onSurfaceVariant = Color(0xFF5C4A3A);
   static const Color disabled = Color(0xFF9E9E9E);
-  static const Color divider = Color(0xFFEDE3D4);
+  static const Color divider  = Color(0xFFEDE3D4);
+
+  // Learning / AI card
+  static const Color learningBg     = Color(0xFFE8F1FC);
+  static const Color learningBorder = Color(0xFF5B9FE1);
+  static const Color learningIcon   = Color(0xFF2D7DD2);
 }

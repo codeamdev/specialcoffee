@@ -9,6 +9,8 @@ import 'package:special_coffee/domain/repositories/fermentation_repository.dart'
 import 'package:special_coffee/presentation/providers/ai_engine_provider.dart';
 import 'package:special_coffee/presentation/providers/fermentation_provider.dart';
 import 'package:special_coffee/presentation/providers/lot_provider.dart';
+import 'package:drift/native.dart';
+import 'package:special_coffee/core/database/app_database.dart';
 
 // ── Fake adapter ──────────────────────────────────────────────────────────────
 
@@ -89,6 +91,12 @@ class _FakeRepo implements FermentationRepository {
     required double actualDurationH,
     required double phFinal,
   }) async {}
+
+  @override
+  Future<double> getAvgCompletedDurationH() async => 0.0;
+
+  @override
+  Future<double> getLastCompletedDurationH() async => 0.0;
 }
 
 // ── Container factory ─────────────────────────────────────────────────────────
@@ -100,6 +108,7 @@ ProviderContainer _container({List<Recommendation> Function(AIContext)? infer}) 
       aiEngineProvider.overrideWith((ref) async => engine),
       fermentationLocalRepoProvider.overrideWith((ref) => _FakeRepo()),
       lotByIdProvider('LOT-001').overrideWith((ref) async => null),
+      appDatabaseProvider.overrideWith((ref) => AppDatabase.forTesting(NativeDatabase.memory())),
     ],
   );
 }

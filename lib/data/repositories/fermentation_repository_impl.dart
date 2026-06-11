@@ -123,4 +123,10 @@ class PostgRESTFermentationRepository implements FermentationRepository {
       },
     );
   }
+
+  @override
+  Future<double> getAvgCompletedDurationH() async => 0.0;
+
+  @override
+  Future<double> getLastCompletedDurationH() async => 0.0;
 }

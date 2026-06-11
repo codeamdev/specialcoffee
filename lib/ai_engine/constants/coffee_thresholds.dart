@@ -85,7 +85,7 @@ abstract final class CoffeeThresholds {
   //     sin degradar completamente.
   // D-13: calibrado con Manual del Cafetero FNC/Cenicafé.
   static const double washingWaterTempCMin   = 15.0; // < 15°C → lavado ineficiente (info)
-  static const double washingWaterTempCMax   = 25.0; // > 25°C → riesgo bacteriano (warning)
+  static const double washingWaterTempCMax   = 30.0; // > 30°C → riesgo bacteriano (warning)
   static const int    washingMinWaterChanges = 2;    // < 2 cambios → lavado incompleto
   static const double washingEffluentPhWarn  = 5.5;  // > 5.5 → fermentación posiblemente incompleta
 

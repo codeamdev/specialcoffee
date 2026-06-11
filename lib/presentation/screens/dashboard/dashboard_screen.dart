@@ -7,6 +7,7 @@ import 'package:special_coffee/core/theme/app_text_styles.dart';
 import 'package:special_coffee/domain/entities/brewing_session.dart';
 import 'package:special_coffee/domain/entities/lot.dart';
 import 'package:special_coffee/presentation/providers/auth_provider.dart';
+import 'package:special_coffee/presentation/providers/brewing_history_provider.dart';
 import 'package:special_coffee/presentation/providers/brewing_session_provider.dart';
 import 'package:special_coffee/presentation/providers/lot_provider.dart';
 import 'package:special_coffee/presentation/providers/lot_summary_provider.dart';

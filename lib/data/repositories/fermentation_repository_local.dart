@@ -140,6 +140,14 @@ class FermentationLocalRepository implements FermentationRepository {
         phFinal: r.phFinal,
       );
 
+  @override
+  Future<double> getAvgCompletedDurationH() =>
+      _dao.getAvgCompletedDurationH(_ownerId);
+
+  @override
+  Future<double> getLastCompletedDurationH() =>
+      _dao.getLastCompletedDurationH(_ownerId);
+
   FermentationReadingRecord _readingFromRow(DbFermentationReading r) =>
       FermentationReadingRecord(
         id: r.id,

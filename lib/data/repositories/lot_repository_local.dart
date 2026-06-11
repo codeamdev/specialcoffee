@@ -24,19 +24,21 @@ class LotLocalRepository implements LotRepository {
   @override
   Future<Lot> saveLot(Lot lot) async {
     await _dao.upsert(LocalLotsCompanion(
-      id:                 Value(lot.id),
-      userId:             Value(lot.userId),
-      varietyId:          Value(lot.varietyId),
-      varietyName:        Value(lot.varietyName),
-      altitudeMasl:       Value(lot.altitudeMasl),
-      region:             Value(lot.region),
-      processType:        Value(lot.processType),
-      ambientTempC:       Value(lot.ambientTempC),
-      ambientHumidityPct: Value(lot.ambientHumidityPct),
-      rainProbabilityPct: Value(lot.rainProbabilityPct),
-      createdAt:          Value(lot.createdAt),
-      status:             Value(lot.status),
-      notes:              Value(lot.notes),
+      id:             Value(lot.id),
+      userId:         Value(lot.userId),
+      varietyId:      Value(lot.varietyId),
+      varietyName:    Value(lot.varietyName),
+      altitudeMasl:   Value(lot.altitudeMasl),
+      region:         Value(lot.region),
+      processType:    Value(lot.processType),
+      latitude:       Value(lot.latitude),
+      longitude:      Value(lot.longitude),
+      farmAreaHa:     Value(lot.farmAreaHa),
+      blendVarietyIds: Value(lot.blendVarietyIds),
+      plantAgeYears:  Value(lot.plantAgeYears),
+      plantType:      Value(lot.plantType),
+      createdAt:      Value(lot.createdAt),
+      notes:          Value(lot.notes),
     ));
     return lot;
   }
@@ -47,18 +49,20 @@ class LotLocalRepository implements LotRepository {
   // ── Mapper ────────────────────────────────────────────────────────────────
 
   static Lot _fromRow(DbLocalLot r) => Lot(
-    id:                 r.id,
-    userId:             r.userId,
-    varietyId:          r.varietyId,
-    varietyName:        r.varietyName,
-    altitudeMasl:       r.altitudeMasl,
-    region:             r.region,
-    processType:        r.processType,
-    ambientTempC:       r.ambientTempC  ?? 18.0,
-    ambientHumidityPct: r.ambientHumidityPct ?? 70.0,
-    rainProbabilityPct: r.rainProbabilityPct,
-    createdAt:          r.createdAt,
-    status:             r.status,
-    notes:              r.notes,
+    id:              r.id,
+    userId:          r.userId,
+    varietyId:       r.varietyId,
+    varietyName:     r.varietyName,
+    altitudeMasl:    r.altitudeMasl,
+    region:          r.region,
+    processType:     r.processType,
+    createdAt:       r.createdAt,
+    notes:           r.notes,
+    latitude:        r.latitude,
+    longitude:       r.longitude,
+    farmAreaHa:      r.farmAreaHa,
+    blendVarietyIds: r.blendVarietyIds,
+    plantAgeYears:   r.plantAgeYears,
+    plantType:       r.plantType,
   );
 }

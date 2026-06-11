@@ -1,4 +1,4 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+﻿import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:special_coffee/ai_engine/models/ai_context.dart';
 import 'package:special_coffee/ai_engine/models/ai_rule.dart';
 import 'package:special_coffee/core/di/providers.dart';
@@ -9,7 +9,7 @@ import 'package:special_coffee/presentation/providers/lot_provider.dart';
 
 part 'washing_provider.g.dart';
 
-// ── State ──────────────────────────────────────────────────────────────────
+// â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class WashingState {
   const WashingState({
@@ -47,7 +47,7 @@ class WashingState {
       );
 }
 
-// ── Notifier ───────────────────────────────────────────────────────────────
+// â”€â”€ Notifier â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @riverpod
 class WashingNotifier extends _$WashingNotifier {
@@ -139,6 +139,7 @@ class WashingNotifier extends _$WashingNotifier {
         recommendations: recs,
         isLoading:       false,
       );
+      ref.read(syncServiceProvider).syncPendingReadings().ignore();
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }

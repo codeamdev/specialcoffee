@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:special_coffee/ai_engine/ai_engine.dart';
 import 'package:special_coffee/core/di/providers.dart';
@@ -9,7 +9,7 @@ import 'package:special_coffee/presentation/providers/lot_provider.dart';
 
 part 'fermentation_provider.g.dart';
 
-// ── State ─────────────────────────────────────────────────────────────────
+// â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class FermentationState {
   final String lotId;
@@ -65,7 +65,7 @@ class FermentationState {
       );
 }
 
-// ── Notifier ──────────────────────────────────────────────────────────────
+// â”€â”€ Notifier â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @riverpod
 class FermentationNotifier extends _$FermentationNotifier {
@@ -97,7 +97,7 @@ class FermentationNotifier extends _$FermentationNotifier {
         );
       } catch (e, st) {
         if (kDebugMode) debugPrint('[FermentationProvider] _loadPersistedSession: $e\n$st');
-        // Persistence unavailable — start fresh in-memory session
+        // Persistence unavailable â€” start fresh in-memory session
       }
     });
   }
@@ -121,7 +121,7 @@ class FermentationNotifier extends _$FermentationNotifier {
         state = state.copyWith(sessionId: () => sessionId);
       } catch (e, st) {
         if (kDebugMode) debugPrint('[FermentationProvider] createSession: $e\n$st');
-        state = state.copyWith(error: () => 'No se pudo iniciar la sesión: los datos no se guardarán.');
+        state = state.copyWith(error: () => 'No se pudo iniciar la sesiÃ³n: los datos no se guardarÃ¡n.');
       }
     }
 
@@ -135,7 +135,7 @@ class FermentationNotifier extends _$FermentationNotifier {
 
     final engine = await ref.read(aiEngineProvider.future);
 
-    // AlertEngine — immediate threshold check, always first
+    // AlertEngine â€” immediate threshold check, always first
     final alerts = engine.checkFermentationReading(
       ph: ph,
       mucilagoTemp: tempC,
@@ -143,7 +143,7 @@ class FermentationNotifier extends _$FermentationNotifier {
       lotId: state.lotId,
     );
 
-    // Linear regression projection (requires ≥ 2 readings)
+    // Linear regression projection (requires â‰¥ 2 readings)
     final projection = updatedReadings.length >= 2
         ? engine.projectFermentationEnd(
             readings: updatedReadings,
@@ -202,7 +202,7 @@ class FermentationNotifier extends _$FermentationNotifier {
       state = state.copyWith(isAnalyzing: false, error: () => 'Error al obtener recomendaciones de IA.');
     }
 
-    // Persist reading to Drift (after AI analysis — fire and track errors silently)
+    // Persist reading to Drift (after AI analysis â€” fire and track errors silently)
     if (sessionId != null) {
       try {
         final alertLevel =
@@ -220,8 +220,8 @@ class FermentationNotifier extends _$FermentationNotifier {
           aiAlertRuleId: alertRuleId,
           aiProjectedEndH: projection,
         );
-        // Sync to backend in background — never awaited, never blocks UI
-        ref.read(syncServiceProvider).syncPendingReadings();
+        // Sync to backend in background â€” never awaited, never blocks UI
+        ref.read(syncServiceProvider).syncPendingReadings().ignore();
       } catch (e, st) {
         if (kDebugMode) debugPrint('[FermentationProvider] addReading persist: $e\n$st');
         state = state.copyWith(error: () => 'Lectura no guardada localmente. Revisa el almacenamiento.');
@@ -260,7 +260,7 @@ class FermentationNotifier extends _$FermentationNotifier {
       (a, b) => a.level.index > b.level.index ? a : b,
     );
     final msg =
-        'pH ${worst.triggerValue.toStringAsFixed(2)} — umbral ${worst.threshold.toStringAsFixed(2)}. '
+        'pH ${worst.triggerValue.toStringAsFixed(2)} â€” umbral ${worst.threshold.toStringAsFixed(2)}. '
         'Proceso: ${state.processType}.';
     if (worst.level == AlertLevel.critical) {
       ns.showFermentationCriticalAlert(lotId: lotId, message: msg);

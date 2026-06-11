@@ -21,6 +21,14 @@ class BrewingSessionDao extends DatabaseAccessor<AppDatabase>
     return rows.map(_toEntity).toList();
   }
 
+  Future<List<BrewingSession>> getByOwner(String ownerId) async {
+    final rows = await (select(brewingSessions)
+          ..where((t) => t.ownerId.equals(ownerId))
+          ..orderBy([(t) => OrderingTerm.desc(t.brewedAt)]))
+        .get();
+    return rows.map(_toEntity).toList();
+  }
+
   static BrewingSession _toEntity(DbBrewingSession r) => BrewingSession(
         id:            r.id,
         ownerId:       r.ownerId,

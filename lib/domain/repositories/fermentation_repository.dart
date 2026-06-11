@@ -30,4 +30,7 @@ abstract class FermentationRepository {
     required double actualDurationH,
     required double phFinal,
   });
+
+  Future<double> getAvgCompletedDurationH();
+  Future<double> getLastCompletedDurationH();
 }

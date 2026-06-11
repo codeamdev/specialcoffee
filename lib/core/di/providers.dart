@@ -19,6 +19,7 @@ import 'package:special_coffee/domain/repositories/lot_stage_log_repository.dart
 import 'package:special_coffee/domain/repositories/water_profile_repository.dart';
 import 'package:special_coffee/data/sync/sync_service.dart';
 import 'package:special_coffee/data/repositories/brewing_session_repository_local.dart';
+import 'package:special_coffee/data/repositories/cosecha_pase_repository_local.dart';
 import 'package:special_coffee/data/repositories/milling_repository_local.dart';
 import 'package:special_coffee/data/repositories/washing_repository_local.dart';
 import 'package:special_coffee/domain/repositories/brewing_session_repository.dart';
@@ -29,6 +30,7 @@ import 'package:special_coffee/domain/repositories/drying_repository.dart';
 import 'package:special_coffee/domain/repositories/fermentation_repository.dart';
 import 'package:special_coffee/domain/repositories/harvest_repository.dart';
 import 'package:special_coffee/domain/repositories/lot_repository.dart';
+import 'package:special_coffee/domain/repositories/cosecha_pase_repository.dart';
 import 'package:special_coffee/domain/repositories/milling_repository.dart';
 import 'package:special_coffee/domain/repositories/washing_repository.dart';
 // Block G — Coffee Master
@@ -125,6 +127,12 @@ MillingRepository millingLocalRepo(Ref ref) {
   final db     = ref.watch(appDatabaseProvider);
   final userId = ref.watch(currentUserIdProvider);
   return MillingLocalRepository(db.millingDao, userId);
+}
+
+@Riverpod(keepAlive: true)
+CosechaPaseRepository cosechaPaseLocalRepo(Ref ref) {
+  final db = ref.watch(appDatabaseProvider);
+  return CosechaPaseLocalRepository(db.cosechaPaseDao);
 }
 
 @Riverpod(keepAlive: true)

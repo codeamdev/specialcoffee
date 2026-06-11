@@ -17,25 +17,29 @@ class SyncService {
 
   Future<void> syncPendingReadings() async {
     if (ApiConfig.devBypass) return;
-    // Wave 1 — lots must land first: every other entity has FK → lots(id).
-    await _syncLots();
-    // Wave 2 — entities that depend only on lots.
-    await Future.wait([
-      _syncCosechaPases(),
-      _syncFermentationSessions(),
-      _syncDryingSessions(),
-      _syncMillingSessions(),
-      _syncClassificationSessions(),
-    ]);
-    // Wave 3 — entities that depend on sessions:
-    //   fermentation_readings → fermentation_sessions + lots
-    //   drying_readings       → drying_sessions + lots
-    //   washing_sessions      → fermentation_sessions (nullable FK)
-    await Future.wait([
-      _syncFermentationReadings(),
-      _syncDryingReadings(),
-      _syncWashingSessions(),
-    ]);
+    try {
+      // Wave 1 — lots must land first: every other entity has FK → lots(id).
+      await _syncLots();
+      // Wave 2 — entities that depend only on lots.
+      await Future.wait([
+        _syncCosechaPases(),
+        _syncFermentationSessions(),
+        _syncDryingSessions(),
+        _syncMillingSessions(),
+        _syncClassificationSessions(),
+      ]);
+      // Wave 3 — entities that depend on sessions:
+      //   fermentation_readings → fermentation_sessions + lots
+      //   drying_readings       → drying_sessions + lots
+      //   washing_sessions      → fermentation_sessions (nullable FK)
+      await Future.wait([
+        _syncFermentationReadings(),
+        _syncDryingReadings(),
+        _syncWashingSessions(),
+      ]);
+    } catch (e, st) {
+      if (kDebugMode) debugPrint('[Sync] syncPendingReadings: $e\n$st');
+    }
   }
 
   // ── Readings (pre-existentes) ─────────────────────────────────────────────
