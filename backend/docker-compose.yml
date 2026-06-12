@@ -1,5 +1,7 @@
 # SpecialCoffee AI — Backend local
-# PostgreSQL corre nativo en Windows (fuera de Docker)
+# PostgreSQL corre nativo en el host (fuera de Docker)
+# Windows/Mac: DB_HOST=host.docker.internal (Docker Desktop resuelve automáticamente)
+# Linux:       DB_HOST=host.docker.internal + extra_hosts resuelve via host-gateway
 # Uso: docker compose up
 
 services:
@@ -8,6 +10,8 @@ services:
     build: ./auth
     ports:
       - "8000:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:5432/${POSTGRES_DB}"
       JWT_SECRET: "${JWT_SECRET}"
@@ -27,6 +31,8 @@ services:
 
   postgrest:
     image: postgrest/postgrest
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       PGRST_DB_URI: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:5432/${POSTGRES_DB}"
       PGRST_DB_SCHEMA: "public"
