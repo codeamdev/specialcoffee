@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:special_coffee/core/constants/app_constants.dart';
+import 'package:special_coffee/core/di/providers.dart';
 import 'package:special_coffee/core/notifications/notification_service.dart';
 import 'package:special_coffee/core/router/app_router.dart';
 import 'package:special_coffee/core/theme/app_theme.dart';
@@ -62,6 +63,7 @@ class SpecialCoffeeApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(connectivityWatcherProvider);
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(

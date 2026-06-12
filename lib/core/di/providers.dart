@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:special_coffee/core/database/app_database.dart';
 import 'package:special_coffee/data/repositories/classification_repository_local.dart';
@@ -221,4 +222,19 @@ CommercialProductRepository commercialProductLocalRepo(Ref ref) {
 LotCertificationRepository lotCertificationLocalRepo(Ref ref) {
   final db = ref.watch(appDatabaseProvider);
   return LotCertificationLocalRepository(db.lotCertificationDao);
+}
+
+// ── Connectivity watcher — dispara sync al recuperar conexión ────────────────
+
+@Riverpod(keepAlive: true)
+void connectivityWatcher(Ref ref) {
+  bool wasOffline = true;
+  final sub = Connectivity().onConnectivityChanged.listen((results) {
+    final isOnline = results.any((r) => r != ConnectivityResult.none);
+    if (isOnline && wasOffline) {
+      ref.read(syncServiceProvider).syncPendingReadings().ignore();
+    }
+    wasOffline = !isOnline;
+  });
+  ref.onDispose(sub.cancel);
 }
