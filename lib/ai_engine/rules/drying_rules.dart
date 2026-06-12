@@ -95,7 +95,7 @@ abstract final class DryingRules {
     AIRule(
       id: 'DRY-HEAT-STRESS-001',
       module: 'drying',
-      name: 'Temperatura ambiente crítica — riesgo de agrietamiento',
+      name: 'Temperatura ambiente crítica — riesgo de agrietamiento (patio/camas)',
       priority: 2,
       logic: RuleLogic.and,
       tags: ['drying', 'temperature', 'warning'],
@@ -104,6 +104,12 @@ abstract final class DryingRules {
           variable: 'ambient_temp_c',
           operator: ConditionOperator.gt,
           threshold: CoffeeThresholds.dryingHeatStressTempC,
+        ),
+        // Excluye secado mecánico — su umbral de temperatura es distinto (ver DRY-MECH-TEMP-*)
+        RuleCondition(
+          variable: 'drying_method',
+          operator: ConditionOperator.neq,
+          threshold: 'mecanico',
         ),
       ],
       outcome: RuleOutcome(
@@ -204,6 +210,148 @@ abstract final class DryingRules {
         parameters: {
           'critical_humidity_pct': CoffeeThresholds.dryingCritAmbHumidityPct,
         },
+      ),
+    ),
+
+    // ── SECADO MECÁNICO — TEMPERATURA ────────────────────────────────────────
+    // Fuente: Manual del Cafetero FNC/Cenicafé 9ª ed. — cap. Secado Mecánico.
+    // DRY-MECH-TEMP-CRIT-001 supersede al warning cuando T > 45°C.
+
+    AIRule(
+      id: 'DRY-MECH-TEMP-WARN-001',
+      module: 'drying',
+      name: 'Temperatura secador mecánico alta — riesgo de grano cristalizado',
+      priority: 2,
+      logic: RuleLogic.and,
+      tags: ['drying', 'mecanico', 'temperature', 'warning'],
+      conditions: [
+        RuleCondition(variable: 'drying_method', operator: ConditionOperator.eq, threshold: 'mecanico'),
+        RuleCondition(
+          variable: 'ambient_temp_c',
+          operator: ConditionOperator.gt,
+          threshold: CoffeeThresholds.dryingMechWarnTempC,
+        ),
+      ],
+      outcome: RuleOutcome(
+        action: 'REDUCE_DRYER_TEMPERATURE',
+        alertLevel: AlertLevel.warning,
+        confidenceBase: 0.85,
+        explanationByRole: {
+          'farmer':    '⚠️ El secador está a {ambient_temp_c} °C. Baje la temperatura — más de 40 °C empieza a dañar el grano.',
+          'processor': '⚠️ Temperatura del aire secante {ambient_temp_c} °C > 40 °C: inicio de gradiente de humedad severo. Reducir a 35–40 °C para preservar estructura del endospermo.',
+          'barista':   '⚠️ Secado mecánico a {ambient_temp_c} °C: temperatura alta puede generar micro-fisuras internas → pérdida de densidad y extracción desigual en taza.',
+        },
+        suggestedActions: [
+          'Reducir la temperatura del aire secante a 35–40 °C',
+          'Aumentar la ventilación para disipar el calor',
+          'Medir la temperatura en el interior de la masa de grano, no solo en el aire de entrada',
+        ],
+        parameters: {'warn_temp_c': CoffeeThresholds.dryingMechWarnTempC},
+      ),
+    ),
+
+    AIRule(
+      id: 'DRY-MECH-TEMP-CRIT-001',
+      module: 'drying',
+      name: 'Temperatura secador mecánico crítica — grano cristalizado inminente',
+      priority: 1,
+      logic: RuleLogic.and,
+      tags: ['drying', 'mecanico', 'temperature', 'critical'],
+      supersedes: 'DRY-MECH-TEMP-WARN-001',
+      conditions: [
+        RuleCondition(variable: 'drying_method', operator: ConditionOperator.eq, threshold: 'mecanico'),
+        RuleCondition(
+          variable: 'ambient_temp_c',
+          operator: ConditionOperator.gt,
+          threshold: CoffeeThresholds.dryingMechCritTempC,
+        ),
+      ],
+      outcome: RuleOutcome(
+        action: 'STOP_DRYER_OVERHEAT',
+        alertLevel: AlertLevel.high,
+        confidenceBase: 0.92,
+        explanationByRole: {
+          'farmer':    '🔴 ¡El secador está demasiado caliente! ({ambient_temp_c} °C). Apáguelo o baje la llama — puede perder todo el lote.',
+          'processor': '🔴 Temperatura del aire {ambient_temp_c} °C supera el máximo de 45 °C (Cenicafé). Riesgo inmediato de "grano cristalizado": fisuras internas, pérdida de peso por fragmentación y bajo rendimiento en trilla. Detener el secador.',
+          'barista':   '🔴 {ambient_temp_c} °C en secador mecánico: las fisuras internas por calor excesivo causan extracción caótica — puntas quemadas, amargor y pérdida total de complejidad aromática.',
+        },
+        suggestedActions: [
+          'Detener el secador inmediatamente',
+          'Abrir compuertas de ventilación para enfriar la masa de grano',
+          'No superar 45 °C en ningún momento (Cenicafé)',
+          'Operar en rango 35–40 °C para preservar calidad SCA',
+        ],
+        parameters: {'crit_temp_c': CoffeeThresholds.dryingMechCritTempC},
+      ),
+    ),
+
+    // ── SECADO MECÁNICO — PROGRESO LENTO ─────────────────────────────────────
+    // D-15: umbral de 5 días estimado — un secador bien calibrado alcanza < 30%
+    // en 3–4 días. Más de 5 días en > 30% indica temperatura baja o sobrecarga.
+
+    AIRule(
+      id: 'DRY-MECH-SLOW-001',
+      module: 'drying',
+      name: 'Secado mecánico lento — posible temperatura baja o sobrecarga',
+      priority: 3,
+      logic: RuleLogic.and,
+      tags: ['drying', 'mecanico', 'warning', 'progress'],
+      conditions: [
+        RuleCondition(variable: 'drying_method', operator: ConditionOperator.eq, threshold: 'mecanico'),
+        RuleCondition(variable: 'drying_day_number', operator: ConditionOperator.gte, threshold: CoffeeThresholds.dryingMechSlowDay),
+        RuleCondition(variable: 'current_humidity_pct', operator: ConditionOperator.gt, threshold: 30.0),
+      ],
+      outcome: RuleOutcome(
+        action: 'OPTIMIZE_MECHANICAL_DRYER',
+        alertLevel: AlertLevel.warning,
+        confidenceBase: 0.79,
+        explanationByRole: {
+          'farmer':    '⚠️ Día {drying_day_number} en secador y el café está en {current_humidity_pct}%. Revise si el secador está muy lleno o si la temperatura es muy baja.',
+          'processor': '⚠️ Día {drying_day_number} en secado mecánico: {current_humidity_pct}% humedad — por debajo de la curva esperada para mecánico (< 30% a partir del día 4). Revisar caudal de aire, temperatura y carga del tambor.',
+          'barista':   '⚠️ Secado mecánico lento en día {drying_day_number}: mayor tiempo de exposición al calor puede oxidar compuestos aromáticos frágiles del grano verde.',
+        },
+        suggestedActions: [
+          'Verificar que la temperatura del aire esté entre 35 y 40 °C',
+          'Reducir la carga del secador al 70–80% de su capacidad',
+          'Revisar el caudal de aire (m³/h) — flujo insuficiente frena el secado',
+          'Considerar pre-escurrido del grano si llega con > 55% de humedad',
+        ],
+        parameters: {'mech_slow_day': CoffeeThresholds.dryingMechSlowDay},
+      ),
+    ),
+
+    // ── CAMAS AFRICANAS — PROGRESO LENTO ─────────────────────────────────────
+    // D-15: camas africanas bien gestionadas en Colombia: < 15% a los 18 días.
+    // Más tiempo indica problema de densidad, cobertura nocturna o HR elevada.
+
+    AIRule(
+      id: 'DRY-CAMAS-SLOW-001',
+      module: 'drying',
+      name: 'Camas africanas: secado lento — revisar densidad y cobertura',
+      priority: 3,
+      logic: RuleLogic.and,
+      tags: ['drying', 'camas_africanas', 'warning', 'progress'],
+      conditions: [
+        RuleCondition(variable: 'drying_method', operator: ConditionOperator.eq, threshold: 'camas_africanas'),
+        RuleCondition(variable: 'drying_day_number', operator: ConditionOperator.gte, threshold: CoffeeThresholds.dryingCamasSlowDay),
+        RuleCondition(variable: 'current_humidity_pct', operator: ConditionOperator.gt, threshold: 15.0),
+      ],
+      outcome: RuleOutcome(
+        action: 'REVIEW_RAISED_BED_CONDITIONS',
+        alertLevel: AlertLevel.warning,
+        confidenceBase: 0.77,
+        explanationByRole: {
+          'farmer':    '⚠️ Día {drying_day_number} en cama africana y el café tiene {current_humidity_pct}%. Revise que la capa no esté muy gruesa y que tape bien de noche.',
+          'processor': '⚠️ Día {drying_day_number} en camas africanas: {current_humidity_pct}% — para condiciones colombianas estándar se espera < 15% antes del día 18. Revisar densidad de la capa (máx. 3–5 cm), cobertura nocturna y frecuencia de volteos.',
+          'barista':   '⚠️ Secado lento en camas africanas (día {drying_day_number}, {current_humidity_pct}%): mayor exposición temporal puede favorecer conversiones enzimáticas no deseadas y cambio en el perfil de acidez del lote.',
+        },
+        suggestedActions: [
+          'Reducir la capa a máximo 3–4 cm de espesor',
+          'Aumentar volteos a cada 1–2 horas en horario de mayor temperatura',
+          'Verificar que la malla de las camas no esté obstruida',
+          'Cubrir completamente durante la noche para evitar reabsorción de humedad',
+        ],
+        parameters: {'camas_slow_day': CoffeeThresholds.dryingCamasSlowDay},
       ),
     ),
 

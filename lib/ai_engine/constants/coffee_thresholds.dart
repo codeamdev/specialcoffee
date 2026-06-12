@@ -163,9 +163,25 @@ abstract final class CoffeeThresholds {
   //   Volteo desde día 3 con grano > 40% HR: práctica estándar Manual del Cafetero
   //     para uniformizar el frente de secado y prevenir encostrado superficial.
   // D-14: calibrado con Manual del Cafetero FNC/Cenicafé y literatura Cenicafé de secado.
-  static const double dryingHeatStressTempC    = 35.0; // > 35°C amb → riesgo agrietamiento
+  static const double dryingHeatStressTempC    = 35.0; // > 35°C amb → riesgo agrietamiento (patio/camas)
   static const double dryingHighAmbHumidityPct = 80.0; // > 80% HR → secado ineficiente (warning)
   static const double dryingCritAmbHumidityPct = 85.0; // > 85% HR → riesgo hongos (critical)
   static const double dryingTurningMinGrainHum = 40.0; // grano > 40% → voltear necesario
   static const int    dryingTurningStartDay    = 3;    // desde día 3 → voltear activamente
+
+  // ── Secado mecánico ──────────────────────────────────────────────────────────
+  // Fuente: Manual del Cafetero Colombiano (FNC/Cenicafé) 9ª ed., cap. Beneficio/Secado Mecánico.
+  // Temperatura del aire > 45°C: fisuras internas ("grano cristalizado") documentadas en
+  //   grano de café pergamino húmedo — gradiente de vapor destruye la estructura del endospermo.
+  // Temperatura del aire > 40°C con grano semiseco (< 30% HR): acelera el gradiente de humedad.
+  // D-15: calibrado con Manual del Cafetero FNC/Cenicafé 9ª ed.
+  static const double dryingMechWarnTempC  = 40.0; // °C — secador mecánico: inicio de riesgo térmico
+  static const double dryingMechCritTempC  = 45.0; // °C — secador mecánico: límite máximo absoluto
+  static const int    dryingMechSlowDay    = 5;    // días — mecánico aún > 30%: proceso lento (D-15)
+
+  // ── Camas africanas ──────────────────────────────────────────────────────────
+  // D-15: estimación basada en condiciones típicas colombianas (Huila, Nariño).
+  // Camas africanas con circulación de aire: típicamente 15–20 días para café pergamino.
+  // Más de 18 días con > 15% HR indica problema de carga o condiciones adversas.
+  static const int    dryingCamasSlowDay   = 18;   // días — camas africanas aún > 15%: muy lento (D-15)
 }

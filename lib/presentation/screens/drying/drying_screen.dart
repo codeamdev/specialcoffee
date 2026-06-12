@@ -141,30 +141,35 @@ class _DryingScreenState extends ConsumerState<DryingScreen> {
             ],
           ]),
           const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            children: _methods.map((m) {
-              final selected  = state.dryingMethod == m.$1;
-              final canChange = !state.hasReadings;
-              return GestureDetector(
-                onTap: canChange ? () => _notifier.changeDryingMethod(m.$1) : null,
-                child: ChoiceChip(
-                  label: Text(m.$2),
-                  selected: selected,
-                  selectedColor: AppColors.warningContainer,
-                  disabledColor: AppColors.surfaceVariant,
-                  labelStyle: AppTextStyles.labelMedium.copyWith(
-                    color: !canChange
-                        ? AppColors.disabled
-                        : selected
-                            ? AppColors.warning
-                            : AppColors.onSurfaceVariant,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: _methods.map((m) {
+                final selected  = state.dryingMethod == m.$1;
+                final canChange = !state.hasReadings;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: GestureDetector(
+                    onTap: canChange ? () => _notifier.changeDryingMethod(m.$1) : null,
+                    child: ChoiceChip(
+                      label: Text(m.$2),
+                      selected: selected,
+                      selectedColor: AppColors.warningContainer,
+                      disabledColor: AppColors.surfaceVariant,
+                      labelStyle: AppTextStyles.labelMedium.copyWith(
+                        color: !canChange
+                            ? AppColors.disabled
+                            : selected
+                                ? AppColors.warning
+                                : AppColors.onSurfaceVariant,
+                        fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                      ),
+                      onSelected: canChange ? (_) => _notifier.changeDryingMethod(m.$1) : null,
+                    ),
                   ),
-                  onSelected: canChange ? (_) => _notifier.changeDryingMethod(m.$1) : null,
-                ),
-              );
-            }).toList(),
+                );
+              }).toList(),
+            ),
           ),
           if (state.hasReadings)
             Padding(

@@ -48,6 +48,7 @@ abstract class AIContext with _$AIContext {
     @Default('') String mucilageState, // 'liquid'|'viscous'|'gelatinous'|'dry'
     @Default(0.0) double currentHumidityPct,
     @Default(0) int dryingDayNumber,
+    @Default('patio') String dryingMethod, // 'patio'|'camas_africanas'|'mecanico'
 
     // ── COSECHA ───────────────────────────────────────────────────
     @Default(0.0) double brixLevel,

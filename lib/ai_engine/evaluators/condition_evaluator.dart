@@ -48,6 +48,7 @@ class ConditionEvaluator {
   // ── Campos de texto del AIContext ────────────────────────────────────────────
   static final Map<String, String Function(AIContext)> _stringAccessors = {
     'process_type':               (c) => c.processType ?? '',
+    'drying_method':              (c) => c.dryingMethod,
     'fermentation_status':        (c) => c.fermentationStatus,
     'mucilage_state':             (c) => c.mucilageState,
     'brew_method':                (c) => c.brewMethod ?? '',

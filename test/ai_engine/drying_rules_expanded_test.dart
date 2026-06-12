@@ -179,8 +179,8 @@ void main() {
   // ── AllRules count (smoke) ───────────────────────────────────────────────
 
   group('DryingRules total', () {
-    test('7 rules loaded (3 original + 4 new)', () {
-      expect(DryingRules.all.length, 7);
+    test('11 rules loaded (7 original + 4 nuevas de método)', () {
+      expect(DryingRules.all.length, 11);
     });
   });
 }

@@ -197,7 +197,7 @@ class DryingNotifier extends _$DryingNotifier {
         ambientHumidityPct: ambientHumidityPct,
         rainProbabilityPct: lot?.rainProbabilityPct ?? 0.0,
         uvIndex: uvIndex,
-        processType: state.dryingMethod,
+        dryingMethod: state.dryingMethod,
         currentHumidityPct: moisturePct,
         dryingDayNumber: dayNumber,
         userLotsCompleted: 0,
