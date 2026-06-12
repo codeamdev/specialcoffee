@@ -34,7 +34,8 @@ CREATE TABLE IF NOT EXISTS users (
   display_name    TEXT        NOT NULL,
   password_hash   TEXT        NOT NULL,
   role            TEXT        NOT NULL DEFAULT 'farmer'
-                              CHECK (role IN ('farmer','processor','barista','entrepreneur')),
+                              CHECK (role IN ('farmer','processor','barista','entrepreneur',
+                                              'producer','coffee_master','brand_manager','producer_integral')),
   secondary_roles TEXT[]      NOT NULL DEFAULT '{}',
   region          TEXT        NOT NULL DEFAULT '',
   country         TEXT        NOT NULL DEFAULT 'CO',

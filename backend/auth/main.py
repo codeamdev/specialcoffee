@@ -168,7 +168,8 @@ async def _current_user_id(
 async def register(body: RegisterRequest):
     if len(body.password) < 8:
         raise HTTPException(400, "La contraseña debe tener al menos 8 caracteres")
-    if body.role not in ("farmer", "processor", "barista", "entrepreneur"):
+    if body.role not in ("farmer", "processor", "barista", "entrepreneur",
+                         "producer", "coffee_master", "brand_manager", "producer_integral"):
         raise HTTPException(400, "Rol inválido")
 
     pool = await get_pool()
