@@ -11,11 +11,11 @@ class ApiConfig {
   static const bool devBypass = false;
 
   // Siempre a través de Nginx — misma estructura local y producción.
-  // Local:  http://127.0.0.1  (nginx en puerto 80 vía Docker Compose)
-  // Prod:   https://specialcoffee.app  (nginx en 443 vía certbot/LB)
+  // Local:  http://127.0.0.1:3001  (Docker Compose)
+  // Prod:   https://api.vermicatalogo.com  (nginx + Let's Encrypt)
   static const String _base = _local
       ? 'http://127.0.0.1:3001'
-      : 'http://2.25.145.148';
+      : 'https://api.vermicatalogo.com';
 
   static const String _authBase = _base;          // → /auth/*
   static const String _pgrstBase = '$_base/api';  // → /api/* (nginx strip prefix)
