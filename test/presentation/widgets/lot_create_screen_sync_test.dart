@@ -41,26 +41,16 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('LotCreateScreen — non-synced fields', () {
-    testWidgets('disclaimer text appears for location and cultivo sections',
+    testWidgets('no sync disclaimer shown — sync is transparent to user',
         (tester) async {
       await tester.pumpWidget(_buildScreen());
       await tester.pumpAndSettle();
 
-      // Location section (1) + cultivo plantAge (1) + cultivo plantType (1)
       expect(
         find.text('Campo no sincronizado — pendiente de revisión de producto.'),
-        findsNWidgets(3),
+        findsNothing,
       );
-    });
-
-    testWidgets('sync_disabled icon accompanies each disclaimer', (tester) async {
-      await tester.pumpWidget(_buildScreen());
-      await tester.pumpAndSettle();
-
-      expect(
-        find.byIcon(Icons.sync_disabled_outlined),
-        findsNWidgets(3),
-      );
+      expect(find.byIcon(Icons.sync_disabled_outlined), findsNothing);
     });
 
     testWidgets('latitude, longitude, farm area and plant age fields are disabled',

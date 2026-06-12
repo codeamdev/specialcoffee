@@ -93,21 +93,21 @@ void main() {
       expect(find.text('Fermentación activa'), findsOneWidget);
     });
 
-    testWidgets('shows lot ID in app bar subtitle', (tester) async {
+    testWidgets('shows process type label in app bar subtitle', (tester) async {
       await tester.runAsync(() async {
         await tester.pumpWidget(_buildScreen('lot-abc'));
         await tester.pumpAndSettle();
       });
-      expect(find.textContaining('lot-abc'), findsWidgets);
+      expect(find.textContaining('Proceso Lavado'), findsWidgets);
     });
 
-    testWidgets('shows process type selector', (tester) async {
+    testWidgets('shows current process type badge', (tester) async {
       await tester.runAsync(() async {
         await tester.pumpWidget(_buildScreen('lot-2'));
         await tester.pumpAndSettle();
       });
-      // Initial process: lavado — at least one selector chip must be visible
-      expect(find.textContaining('Lavado'), findsWidgets);
+      // Locked badge shows process type (lavado is default)
+      expect(find.textContaining('Proceso Lavado'), findsWidgets);
     });
   });
 }

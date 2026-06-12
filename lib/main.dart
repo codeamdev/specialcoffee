@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:special_coffee/core/constants/app_constants.dart';
 import 'package:special_coffee/core/notifications/notification_service.dart';
 import 'package:special_coffee/core/router/app_router.dart';
@@ -31,6 +32,8 @@ Future<void> main() async {
   };
 
   _configureSystemUI();
+  await Hive.initFlutter();
+  await Hive.openBox<dynamic>(AppConstants.hiveBoxPreferences);
   await NotificationService.instance.init();
 
   runApp(

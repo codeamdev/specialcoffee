@@ -25,6 +25,9 @@ import 'package:special_coffee/presentation/screens/washing/washing_screen.dart'
 import 'package:special_coffee/presentation/screens/lot/lot_create_screen.dart';
 import 'package:special_coffee/presentation/screens/lot/lot_detail_screen.dart';
 import 'package:special_coffee/presentation/screens/lot/lot_list_screen.dart';
+import 'package:special_coffee/presentation/screens/pase/pase_create_screen.dart';
+import 'package:special_coffee/presentation/screens/pase/pase_detail_screen.dart';
+import 'package:special_coffee/presentation/screens/pase/pases_list_screen.dart';
 import 'package:special_coffee/presentation/screens/admin/admin_screen.dart';
 import 'package:special_coffee/presentation/screens/profile/profile_screen.dart';
 import 'package:special_coffee/presentation/screens/shell/main_shell.dart';
@@ -128,6 +131,7 @@ GoRouter appRouter(Ref ref) {
                     path: 'fermentation',
                     builder: (context, state) => FermentationScreen(
                       lotId: state.pathParameters['id']!,
+                      paseId: state.uri.queryParameters['paseId'],
                     ),
                   ),
                   GoRoute(
@@ -218,6 +222,25 @@ GoRouter appRouter(Ref ref) {
                 path: 'diagnosis',
                 builder: (context, state) => BrewDiagnosisScreen(
                   params: state.extra as Map<String, dynamic>? ?? {},
+                ),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: AppRoutes.pases,
+            pageBuilder: (context, state) => _noTransitionPage(
+              const PasesListScreen(),
+              state,
+            ),
+            routes: [
+              GoRoute(
+                path: 'create',
+                builder: (context, state) => const PaseCreateScreen(),
+              ),
+              GoRoute(
+                path: ':id',
+                builder: (context, state) => PaseDetailScreen(
+                  paseId: state.pathParameters['id']!,
                 ),
               ),
             ],

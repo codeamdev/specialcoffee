@@ -1,6 +1,6 @@
 # SpecialCoffee AI — Auditoría Técnica (Vivo)
 
-> **Fuente de verdad única.** Última actualización: 2026-06-10 — Sync E2E validado, G-1/D-12 resuelto parcial · 424 tests ✅.
+> **Fuente de verdad única.** Última actualización: 2026-06-11 — syncPendingReadings en 4 providers, FERM rules completas, LINT-1 deuda abierta · 422 tests ✅.
 > Sprint de referencia: Sprints 1–3 (commit `b3c1633`) + sesión de auditoría (commit `3c69afc`).
 > Leyenda: ✅ Cerrado · 🔴 Abierto · 🟡 Pendiente / Mitigado · 🟠 Deuda aceptada · ⚪ Post-MVP / Fase final
 
@@ -117,11 +117,12 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | D-10| —             | Gap en numeración — nunca asignado                                  | —                                    | — |
 | D-11| Android       | Decidir `applicationId` definitivo antes de publicar en Play Store  | ANDROID_SETUP.md                    | ⚪ Fase final |
 | D-12| Persistencia  | Reconciliar `local_lots` vs `lots` — 6 campos agronómicos sin columna remota, bloqueados en UI + invariante test. Destino diferido a producto. | local_lots_table.dart, docs/decisions/lots-fields-not-synced.md | 🟡 RESUELTO PARCIAL |
-| D-13| Agronomía     | Umbrales Lavado — calibrados (2026-06-03) | coffee_thresholds.dart | ✅ Calibrado — Manual del Cafetero FNC/Cenicafé: agua fresca ≤ 25°C (washingWaterTempCMax ajustado 30→25°C), ≥ 2 cambios, pH efluente ≤ 5.5. |
+| D-13| Agronomía     | Umbrales Lavado — calibrados (2026-06-03) | coffee_thresholds.dart | ✅ Calibrado — Manual del Cafetero FNC/Cenicafé: `washingWaterTempCMax` = 30°C (> 30°C riesgo bacteriano), ≥ 2 cambios, pH efluente ≤ 5.5. Nota: valor previo 25°C era incorrecto — corregido a 30°C en commit c8efa05 (2026-06-11). |
 | D-14| Agronomía     | Umbrales secado expandidos — calibrados (2026-06-03) | coffee_thresholds.dart | ✅ Calibrado — Manual del Cafetero FNC/Cenicafé + Puerta-Quintero (Cenicafé): 35°C agrietamiento, 80% HR secado ineficiente, 85% HR riesgo hongos, volteo desde día 3 con grano > 40%. |
 | D-15| BD (PostgreSQL)| Índice faltante en `drying_sessions(lot_id)` — queries O(n) en tabla crítica | schema.sql              | ✅ Cerrado (Auditoría T1, migración 0001) |
 | D-16| BD (PostgreSQL)| `db-schema-cache-ttl = 0` en producción — re-introspección en cada request | postgrest.conf          | ✅ Cerrado (Auditoría T1, ttl→300) |
 | SYNC-2| Persistencia | Decidir destino de los 6 campos agronómicos no sincronizados (`latitude/longitude/farm_area_ha/blend_variety_ids/plant_age_years/plant_type`) — columnas presentes en `local_lots` pero sin contraparte en PostgREST `/api/lots`. Payload actual los omite (invariante verificada por test). Requiere decisión de producto + posible migración de schema remoto. | local_lots_table.dart, docs/decisions/lots-fields-not-synced.md | 🟡 Pendiente decisión de producto |
+| LINT-1| Código      | `onesignal_service.dart` llama `authRepo.registerDevice(playerId)` pero `registerDevice` no está declarado en `AuthRepository` (auth_repository.dart). Error de análisis estático pre-existente — `auth_repository_impl.dart` lo implementa pero la interfaz abstracta carece del método. Bloquea `flutter analyze` limpio. | lib/core/notifications/onesignal_service.dart:34,42 · lib/domain/repositories/auth_repository.dart | 🔴 Abierto |
 
 ---
 
@@ -274,7 +275,7 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | A. Dominio         | —                 | C-2         | D-9           | B-2, B-4      | 9 etapas IA + B-3 |
 | B. Etapas          | —                 | —           | —             | B-2, B-4      | B-1, B-3     |
 | C. Reglas          | —                 | —           | —             | —             | C-1, C-2, C-3, C-4 |
-| D. Deudas técnicas | —                 | — | SYNC-2 | D-1,D-4,D-9,D-11,D-12 | D-2,D-3,D-5,D-6,D-7,D-8,D-13,D-14,D-15,D-16 |
+| D. Deudas técnicas | LINT-1            | — | SYNC-2 | D-1,D-4,D-9,D-11,D-12 | D-2,D-3,D-5,D-6,D-7,D-8,D-13,D-14,D-15,D-16 |
 | E. Conflictos      | —                 | —           | —             | —             | E-1, E-2     |
 | F. Preparación     | —                 | —           | —             | —             | F-1, F-2     |
 | G. Persistencia    | —                 | —           | —             | G-1 (=D-12)   | G-2, G-3     |
@@ -283,8 +284,8 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | J. Tests/Código    | —                 | —           | —             | —             | J-1, J-2, J-3, J-4, J-5 |
 | K. UX              | —                 | —           | —             | K-1           | —            |
 
-**Abiertos críticos (MVP)**: ninguno. **Tests finales: 424/424 ✅ (413 unit/widget + 11 integration) · Schema v18 · AllRules v1.3.0 · Motor de reglas: 12 módulos, 8 procesos cubiertos (brewing rules +14). API clima: Open-Meteo (sin key). MEJ-4..10 cerrados.**
-**Calibración umbrales**: ✅ D-2,D-5,D-6,D-7,D-13,D-14 cerrados con fuentes Cenicafé/FNC (2026-06-03). `washingWaterTempCMax` ajustado 30→25°C; intervalos cosecha calibrados a AT No. 420. Bloque G: umbrales `physical_analyses` documentados (SCA Defect Handbook, ISO 6673) y `roast_profiles` (Scott Rao, SCA Roast Color Classification).
+**Abiertos críticos (MVP)**: LINT-1 (`registerDevice` faltante en `AuthRepository`). **Tests finales: 422/422 ✅ (411 unit/widget + 11 integration) · Schema v18 · AllRules v1.3.0 · Motor de reglas: 12 módulos, 8 procesos cubiertos (brewing rules +14). API clima: Open-Meteo (sin key). MEJ-4..10 cerrados.**
+**Calibración umbrales**: ✅ D-2,D-5,D-6,D-7,D-13,D-14 cerrados con fuentes Cenicafé/FNC (2026-06-03). `washingWaterTempCMax` = 30°C (corregido 25→30 en commit c8efa05); intervalos cosecha calibrados a AT No. 420. Bloque G: umbrales `physical_analyses` documentados (SCA Defect Handbook, ISO 6673) y `roast_profiles` (Scott Rao, SCA Roast Color Classification).
 **Pendiente manual (seguridad)**: H-3 — purga de historial git con `git filter-repo`.
 
 ---
@@ -310,6 +311,7 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | **Bloque I-1** | Pase de Cosecha | schema v17 (cosecha_pases), CosechaPase, DAO, repo, provider, PaseCreateScreen, PaseDetailScreen, etapaActual avance, schedulePaseMedicionReminder — 377/377 ✅ | ✅ 2026-06-09 |
 | **Bloque I-2** | I-2 | Process wiring (paseId routing) + Lot simplification (GPS fields, schema v18, UI cleanup) — 377/377 ✅ | ✅ 2026-06-09 |
 | **Sync E2E** | Bug fixes + E2E | `_syncLots()` bugs (status/process_type CHECK constraints), wave-sync FK ordering, ApiClient.withToken, 11 integration tests — 424/424 ✅ | ✅ 2026-06-10 (32916d2, 57d4a4c, fa9ce1a) |
+| **Sync providers** | syncPendingReadings | syncPendingReadings añadido a cosecha_pase/washing/milling/classification providers; FERM rules verificadas; washingWaterTempCMax 25→30°C; LINT-1 deuda abierta — 422/422 ✅ | ✅ 2026-06-11 (c8efa05) |
 | **Fase final** | D-1,D-4,D-12,D-11 | Android + sync PostgREST — no tocar hasta OK | 🔒 |
 | **Auditoría Pre-Prod T1** | SEC-1…7, QUAL-1, DB-1/2, ARCH-1, TEST-1 | Primera tanda de correcciones del INFORME_AUDITORIA.md | ✅ 2026-05-27 |
 | **Auditoría Pre-Prod T2** | ARCH-2/3, DEVOPS-2, DB-3, QUAL-2 | Segunda tanda de correcciones | ✅ 2026-05-27 (f6f757b) |
@@ -391,3 +393,4 @@ El proceso del café tiene 11 etapas. El motor IA cubre **7 de 11**.
 | 2026-06-10 | 57d4a4c   | Bug fix: `syncPendingReadings()` convertido a 3 waves secuenciales para respetar FK constraints (9 entidades en paralelo → wave 1: lots; wave 2: fermentation/drying/washing/milling/harvest; wave 3: cupping/physical_analyses/roast_profiles/brewing_sessions) |
 | 2026-06-10 | 3f9bcf3   | G-1/D-12 cierre parcial: TODOs en local_lots_table.dart para 6 campos agronómicos; invariante test sync_service_test.dart; docs/decisions/lots-fields-not-synced.md actualizado; SYNC-2 registrado como deuda pendiente |
 | 2026-06-10 | fa9ce1a   | E2E sync validation: ApiClient.withToken(@visibleForTesting), 11 integration tests (test/integration/sync_e2e_test.dart) — 9 entidades × happy path + idempotency + partial failure; docs/validation/sync-e2e-results.md — 424/424 ✅ |
+| 2026-06-11 | c8efa05   | syncPendingReadings añadido a 4 providers faltantes (cosecha_pase, washing, milling, classification); FERM rules honey/anaeróbico verificadas en fermentation_rules.dart; washingWaterTempCMax corregido 25→30°C (valor 25 era incorrecto); Lot campos agronómicos opcionales verificados (blendVarietyIds, plantAgeYears, plantType + @Default para processType/ambientTempC); FermentationRepository getAvgCompletedDurationH/getLastCompletedDurationH verificados; SyncService try-catch + wave ordering verificado; cosechaPaseLocalRepoProvider en providers.dart:133 verificado; appDatabaseProvider.overrideWith en 5 test containers; LINT-1 abierto — 422/422 ✅ |

@@ -14,8 +14,8 @@ class ApiConfig {
   // Local:  http://127.0.0.1  (nginx en puerto 80 vía Docker Compose)
   // Prod:   https://specialcoffee.app  (nginx en 443 vía certbot/LB)
   static const String _base = _local
-      ? 'http://127.0.0.1'
-      : 'https://specialcoffee.app';
+      ? 'http://127.0.0.1:3001'
+      : 'http://2.25.145.148:3001';
 
   static const String _authBase = _base;          // → /auth/*
   static const String _pgrstBase = '$_base/api';  // → /api/* (nginx strip prefix)

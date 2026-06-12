@@ -68,6 +68,9 @@ abstract final class AppRoutes {
   static const String depulping      = '/lots/:id/depulping';
   static const String cupping        = '/lots/:id/cupping';
   static const String milling        = '/lots/:id/milling';
+  static const String pases = '/pases';
+  static const String pasesCreate = '/pases/create';
+  static const String paseDetail = '/pases/:id';
   static const String baristaHome = '/barista';
   static const String baristaWizard = '/barista/wizard';
   static const String lotWorkflow = '/lots/:id/workflow';

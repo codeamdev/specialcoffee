@@ -16,21 +16,17 @@ services:
       REFRESH_TOKEN_EXPIRE_DAYS: "30"
       AUTH_PORT: "8000"
     restart: unless-stopped
-    # FastAPI con uvicorn — arranque ~3 s; /health responde sin BD si el pool aún se conecta
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 15s
-    # 256 MB cubre FastAPI + uvicorn + asyncpg pool (2–10 cx).
-    # 0.5 CPU evita monopolización en máquinas de desarrollo de 4–8 cores.
     mem_limit: 256m
     cpus: "0.50"
 
   postgrest:
     image: postgrest/postgrest
-    # Sin puerto externo: solo accesible internamente por nginx
     environment:
       PGRST_DB_URI: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:5432/${POSTGRES_DB}"
       PGRST_DB_SCHEMA: "public"
@@ -40,38 +36,30 @@ services:
       PGRST_LOG_LEVEL: "info"
       PGRST_DB_SCHEMA_CACHE_TTL: "0"
     restart: unless-stopped
-    # PostgREST expone el root "/" con el schema JSON cuando está listo
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
+      test: ["CMD", "sh", "-c", "nc -z localhost 3000"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
-    # 128 MB es holgado para PostgREST (Go binary, pool de 5 cx a PostgreSQL).
-    # 0.25 CPU refleja que es un proxy ligero, no compute-heavy.
     mem_limit: 128m
     cpus: "0.25"
 
   nginx:
     image: nginx:alpine
     ports:
-      - "3001:3001"
+      - "3001:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      auth:
-        condition: service_healthy
-      postgrest:
-        condition: service_healthy
+      - auth
+      - postgrest
     restart: unless-stopped
-    # nginx:alpine tiene healthcheck nativo vía la señal de proceso;
-    # verificamos que el puerto esté respondiendo.
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3001/"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/api/"]
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 5s
-    # nginx es trivialmente ligero; 64 MB y 0.25 CPU son más que suficientes.
+      start_period: 15s
     mem_limit: 64m
     cpus: "0.25"

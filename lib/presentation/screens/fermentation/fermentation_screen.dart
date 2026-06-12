@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:special_coffee/ai_engine/models/ai_rule.dart';
 import 'package:special_coffee/ai_engine/models/alert.dart';
+import 'package:special_coffee/core/di/providers.dart';
 import 'package:special_coffee/core/theme/app_colors.dart';
 import 'package:special_coffee/core/theme/app_text_styles.dart';
 import 'package:special_coffee/presentation/providers/fermentation_provider.dart';
@@ -13,22 +14,16 @@ import 'package:special_coffee/presentation/widgets/learning_card.dart';
 // ── Screen ─────────────────────────────────────────────────────────────────
 
 class FermentationScreen extends ConsumerStatefulWidget {
-  const FermentationScreen({super.key, required this.lotId});
+  const FermentationScreen({super.key, required this.lotId, this.paseId});
 
-  final String lotId;
+  final String  lotId;
+  final String? paseId;
 
   @override
   ConsumerState<FermentationScreen> createState() => _FermentationScreenState();
 }
 
 class _FermentationScreenState extends ConsumerState<FermentationScreen> {
-  static const _processes = [
-    ('lavado',           'Lavado'),
-    ('natural',          'Natural'),
-    ('anaerobic_lactic', 'Anaeróbico'),
-    ('honey_yellow',     'Honey'),
-  ];
-
   static const _mucilageOptions = [
     ('',           'N/A'),
     ('liquid',     'Líquido'),
@@ -37,22 +32,36 @@ class _FermentationScreenState extends ConsumerState<FermentationScreen> {
     ('dry',        'Seco'),
   ];
 
-  final _formKey      = GlobalKey<FormState>();
-  final _scrollCtrl   = ScrollController();
-  final _alertsKey    = GlobalKey();
-  final _phCtrl       = TextEditingController();
-  final _tempCtrl     = TextEditingController();
-  final _hoursCtrl    = TextEditingController();
-  String _mucilage    = '';
+  final _formKey    = GlobalKey<FormState>();
+  final _scrollCtrl = ScrollController();
+  final _alertsKey  = GlobalKey();
+  final _phCtrl     = TextEditingController();
+  final _tempCtrl   = TextEditingController();
+  String _mucilage  = '';
 
   FermentationNotifier get _notifier =>
       ref.read(fermentationProvider(widget.lotId).notifier);
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.paseId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _syncProcessTypeFromPase());
+    }
+  }
+
+  Future<void> _syncProcessTypeFromPase() async {
+    if (!mounted) return;
+    final pase = await ref.read(cosechaPaseLocalRepoProvider).getById(widget.paseId!);
+    if (pase != null && mounted) {
+      _notifier.changeProcessType(pase.tipoProceso);
+    }
+  }
+
+  @override
   void dispose() {
     _phCtrl.dispose();
     _tempCtrl.dispose();
-    _hoursCtrl.dispose();
     _scrollCtrl.dispose();
     super.dispose();
   }
@@ -69,6 +78,10 @@ class _FermentationScreenState extends ConsumerState<FermentationScreen> {
         _scrollToAlerts();
       }
     });
+
+    final elapsedH = state.sessionStartedAt != null
+        ? DateTime.now().difference(state.sessionStartedAt!).inMinutes / 60.0
+        : (state.lastReading?.hoursElapsed ?? 0.0);
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -95,7 +108,13 @@ class _FermentationScreenState extends ConsumerState<FermentationScreen> {
               tip: 'Mantén el pH entre 3.8–5.0 para lavado. '
                   'Por debajo de 3.5 en anaeróbico hay riesgo crítico de defecto.',
             ),
-            _buildProcessSection(state),
+            _buildProcessBadge(state),
+            const SizedBox(height: 12),
+            _ReadingGuideCard(
+              processType:  state.processType,
+              readingCount: state.readings.length,
+              elapsedH:     elapsedH,
+            ),
             const SizedBox(height: 12),
             if (state.hasReadings)
               FermentationPhaseCard(
@@ -108,7 +127,7 @@ class _FermentationScreenState extends ConsumerState<FermentationScreen> {
                 processType: state.processType,
               ),
             const SizedBox(height: 12),
-            _buildReadingForm(state),
+            _buildReadingForm(state, elapsedH),
             if (state.activeAlerts.isNotEmpty) ...[
               const SizedBox(height: 16),
               _AlertSection(key: _alertsKey, alerts: state.activeAlerts),
@@ -140,7 +159,7 @@ class _FermentationScreenState extends ConsumerState<FermentationScreen> {
         children: [
           const Text('Fermentación activa'),
           Text(
-            'Lote ${widget.lotId}',
+            _tipoLabel(state.processType),
             style: AppTextStyles.labelSmall
                 .copyWith(color: AppColors.onSurfaceVariant),
           ),
@@ -162,72 +181,49 @@ class _FermentationScreenState extends ConsumerState<FermentationScreen> {
     );
   }
 
-  // ── Process selector ──────────────────────────────────────────────────────
+  // ── Process badge (locked) ────────────────────────────────────────────────
 
-  Widget _buildProcessSection(FermentationState state) {
+  Widget _buildProcessBadge(FermentationState state) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.outlineVariant),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            const Icon(Icons.science_outlined, size: 16, color: AppColors.caramel),
-            const SizedBox(width: 8),
-            Text('Tipo de proceso', style: AppTextStyles.labelLarge),
-            if (state.hasReadings) ...[
-              const Spacer(),
-              const Icon(Icons.lock_outline, size: 14, color: AppColors.disabled),
-            ],
-          ]),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            children: _processes.map((p) {
-              final selected  = state.processType == p.$1;
-              final canChange = !state.hasReadings;
-              return GestureDetector(
-                onTap: canChange ? () => _notifier.changeProcessType(p.$1) : null,
-                child: ChoiceChip(
-                  label: Text(p.$2),
-                  selected: selected,
-                  selectedColor: AppColors.aiBlueContainer,
-                  disabledColor: AppColors.surfaceVariant,
-                  labelStyle: AppTextStyles.labelMedium.copyWith(
-                    color: !canChange
-                        ? AppColors.disabled
-                        : selected
-                            ? AppColors.aiBlue
-                            : AppColors.onSurfaceVariant,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                  ),
-                  onSelected: canChange ? (_) => _notifier.changeProcessType(p.$1) : null,
-                ),
-              );
-            }).toList(),
+      child: Row(children: [
+        const Icon(Icons.science_outlined, size: 16, color: AppColors.caramel),
+        const SizedBox(width: 8),
+        Text('Tipo de proceso', style: AppTextStyles.labelMedium),
+        const Spacer(),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.aiBlueContainer,
+            borderRadius: BorderRadius.circular(20),
           ),
-          if (state.hasReadings)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                'El proceso no puede modificarse con lecturas activas.',
-                style: AppTextStyles.bodySmall
-                    .copyWith(color: AppColors.onSurfaceVariant),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (widget.paseId != null || state.hasReadings)
+                const Padding(
+                  padding: EdgeInsets.only(right: 4),
+                  child: Icon(Icons.lock_outline, size: 12, color: AppColors.aiBlue),
+                ),
+              Text(
+                _tipoLabel(state.processType),
+                style: AppTextStyles.labelSmall.copyWith(color: AppColors.aiBlue),
               ),
-            ),
-        ],
-      ),
+            ],
+          ),
+        ),
+      ]),
     );
   }
 
   // ── Reading form ──────────────────────────────────────────────────────────
 
-  Widget _buildReadingForm(FermentationState state) {
-    final lastReading = state.lastReading;
+  Widget _buildReadingForm(FermentationState state, double elapsedH) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -245,40 +241,27 @@ class _FermentationScreenState extends ConsumerState<FermentationScreen> {
                   size: 16, color: AppColors.caramel),
               const SizedBox(width: 8),
               Text('Nueva lectura', style: AppTextStyles.labelLarge),
-              if (lastReading != null) ...[
-                const Spacer(),
-                Text(
-                  'Última: ${lastReading.hoursElapsed.toStringAsFixed(1)}h — '
-                  'pH ${lastReading.phValue.toStringAsFixed(2)}',
-                  style: AppTextStyles.bodySmall,
-                ),
-              ],
+              const Spacer(),
+              _ElapsedBadge(hours: elapsedH),
             ]),
             const SizedBox(height: 14),
 
-            // ── Main fields row ─────────────────────────────────────────
+            // ── pH + Temp fields ─────────────────────────────────────────
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(child: _PhField(controller: _phCtrl)),
                 const SizedBox(width: 10),
                 Expanded(child: _TempField(controller: _tempCtrl)),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _HoursField(
-                    controller: _hoursCtrl,
-                    lastReading: lastReading,
-                  ),
-                ),
               ],
             ),
 
-            // ── Live pH scale ───────────────────────────────────────────
+            // ── Live pH scale ─────────────────────────────────────────────
             _PhScaleIndicator(phController: _phCtrl),
 
             const SizedBox(height: 14),
 
-            // ── Mucilage state ──────────────────────────────────────────
+            // ── Mucilage state ────────────────────────────────────────────
             Row(children: [
               Text('Estado del mucílago:', style: AppTextStyles.labelMedium),
             ]),
@@ -292,11 +275,8 @@ class _FermentationScreenState extends ConsumerState<FermentationScreen> {
                   selected: selected,
                   selectedColor: AppColors.aiBlueContainer,
                   labelStyle: AppTextStyles.labelSmall.copyWith(
-                    color: selected
-                        ? AppColors.aiBlue
-                        : AppColors.onSurfaceVariant,
-                    fontWeight:
-                        selected ? FontWeight.w600 : FontWeight.w400,
+                    color: selected ? AppColors.aiBlue : AppColors.onSurfaceVariant,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                   ),
                   onSelected: (_) =>
                       setState(() => _mucilage = selected ? '' : m.$1),
@@ -306,7 +286,7 @@ class _FermentationScreenState extends ConsumerState<FermentationScreen> {
 
             const SizedBox(height: 16),
 
-            // ── Submit ──────────────────────────────────────────────────
+            // ── Submit ────────────────────────────────────────────────────
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -320,9 +300,7 @@ class _FermentationScreenState extends ConsumerState<FermentationScreen> {
                       )
                     : const Icon(Icons.auto_awesome_rounded, size: 16),
                 label: Text(
-                  state.isAnalyzing
-                      ? 'Analizando...'
-                      : 'Registrar y analizar',
+                  state.isAnalyzing ? 'Analizando...' : 'Registrar y analizar',
                   style: AppTextStyles.buttonMedium,
                 ),
                 style: ElevatedButton.styleFrom(
@@ -346,17 +324,28 @@ class _FermentationScreenState extends ConsumerState<FermentationScreen> {
   Future<void> _registerReading() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final state       = ref.read(fermentationProvider(widget.lotId));
+    final elapsedH    = state.sessionStartedAt != null
+        ? DateTime.now().difference(state.sessionStartedAt!).inMinutes / 60.0
+        : 0.0;
+    final lastH       = state.lastReading?.hoursElapsed;
+
+    if (lastH != null && elapsedH <= lastH) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Demasiado pronto — espera el intervalo recomendado.')),
+      );
+      return;
+    }
+
     await _notifier.addReading(
-      ph: double.parse(_phCtrl.text.trim()),
-      tempC: double.parse(_tempCtrl.text.trim()),
-      hoursElapsed: double.parse(_hoursCtrl.text.trim()),
+      ph:           double.parse(_phCtrl.text.trim()),
+      tempC:        double.parse(_tempCtrl.text.trim()),
+      hoursElapsed: elapsedH,
       mucilageState: _mucilage,
     );
 
-    // Clear the numeric fields but keep mucilage state for convenience
     _phCtrl.clear();
     _tempCtrl.clear();
-    _hoursCtrl.clear();
   }
 
   void _scrollToAlerts() {
@@ -369,9 +358,129 @@ class _FermentationScreenState extends ConsumerState<FermentationScreen> {
       }
     });
   }
+
+  static String _tipoLabel(String t) => switch (t) {
+    'lavado'             => 'Proceso Lavado',
+    'natural'            => 'Proceso Natural',
+    'honey_yellow'       => 'Proceso Honey Yellow',
+    'honey_red'          => 'Proceso Honey Red',
+    'anaerobic_lactic'   => 'Anaeróbico Láctico',
+    'anaerobic_carbonic' => 'Anaeróbico Carbónico',
+    _                    => t,
+  };
 }
 
-// ── Form field widgets ────────────────────────────────────────────────────
+// ── Elapsed hours badge ───────────────────────────────────────────────────
+
+class _ElapsedBadge extends StatelessWidget {
+  const _ElapsedBadge({required this.hours});
+  final double hours;
+
+  @override
+  Widget build(BuildContext context) {
+    final h = hours.floor();
+    final m = ((hours - h) * 60).round();
+    final label = h > 0 ? '${h}h ${m}m' : '${m}m';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.timer_outlined, size: 12, color: AppColors.caramel),
+          const SizedBox(width: 4),
+          Text('$label en proceso',
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.caramel)),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Reading guide card ─────────────────────────────────────────────────────
+
+class _ReadingGuideCard extends StatelessWidget {
+  const _ReadingGuideCard({
+    required this.processType,
+    required this.readingCount,
+    required this.elapsedH,
+  });
+
+  final String processType;
+  final int    readingCount;
+  final double elapsedH;
+
+  double get _intervalH => switch (processType) {
+    'lavado'                                    => 4.0,
+    'natural'                                   => 24.0,
+    'honey_yellow' || 'honey_red'               => 12.0,
+    'anaerobic_lactic' || 'anaerobic_carbonic'  => 4.0,
+    _                                           => 6.0,
+  };
+
+  int get _expectedReadings => switch (processType) {
+    'lavado'                                    => 8,
+    'natural'                                   => 10,
+    'honey_yellow' || 'honey_red'               => 10,
+    'anaerobic_lactic' || 'anaerobic_carbonic'  => 20,
+    _                                           => 8,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final nextH        = readingCount * _intervalH;
+    final hoursLeft    = nextH - elapsedH;
+    final isOverdue    = hoursLeft <= 0 && readingCount > 0;
+    final isDue        = hoursLeft <= 0;
+    final color        = isOverdue ? AppColors.error : AppColors.caramel;
+    final bgColor      = isOverdue ? AppColors.errorContainer : AppColors.surfaceVariant;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isOverdue ? AppColors.error.withValues(alpha: 0.35) : AppColors.outlineVariant,
+        ),
+      ),
+      child: Row(children: [
+        Icon(
+          isOverdue ? Icons.timer_off_rounded : Icons.schedule_rounded,
+          size: 18,
+          color: color,
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Lectura ${readingCount + 1} de ~$_expectedReadings · '
+                'Intervalo ${_intervalH.toStringAsFixed(0)}h',
+                style: AppTextStyles.labelSmall,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                isDue
+                    ? (readingCount == 0
+                        ? 'Registra la primera lectura ahora'
+                        : 'Lectura vencida — registra ahora')
+                    : 'Próxima lectura en ${hoursLeft.toStringAsFixed(1)}h',
+                style: AppTextStyles.bodySmall.copyWith(color: color),
+              ),
+            ],
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
+// ── Form field widgets ─────────────────────────────────────────────────────
 
 InputDecoration _fieldDecor(String label, {String? hint}) => InputDecoration(
       labelText: label,
@@ -436,41 +545,17 @@ class _TempField extends StatelessWidget {
   }
 }
 
-class _HoursField extends StatelessWidget {
-  const _HoursField({required this.controller, required this.lastReading});
-  final TextEditingController controller;
-  final FermentationReading? lastReading;
-
-  @override
-  Widget build(BuildContext context) {
-    final prevH = lastReading?.hoursElapsed;
-    return TextFormField(
-      controller: controller,
-      decoration:
-          _fieldDecor('Horas', hint: prevH != null ? '${prevH + 4}' : '12'),
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      style: AppTextStyles.numericMedium,
-      validator: (v) {
-        final n = double.tryParse(v ?? '');
-        if (n == null || n < 0) return '≥ 0';
-        if (prevH != null && n <= prevH) return '> ${prevH}h';
-        return null;
-      },
-    );
-  }
-}
-
-// ── pH scale indicator ────────────────────────────────────────────────────
+// ── pH scale indicator ─────────────────────────────────────────────────────
 
 class _PhScaleIndicator extends StatelessWidget {
   const _PhScaleIndicator({required this.phController});
   final TextEditingController phController;
 
   static const _gradient = LinearGradient(colors: [
-    Color(0xFFC62828), // pH 2.0 — critical
-    Color(0xFFF57F17), // pH 3.5 — high alert
-    Color(0xFFFFD54F), // pH 5.0 — normal
-    Color(0xFF66BB6A), // pH 7.0 — neutral
+    Color(0xFFC62828),
+    Color(0xFFF57F17),
+    Color(0xFFFFD54F),
+    Color(0xFF66BB6A),
   ]);
 
   @override
@@ -482,8 +567,8 @@ class _PhScaleIndicator extends StatelessWidget {
         if (ph == null || ph < 2.0 || ph > 8.0) {
           return const SizedBox(height: 8);
         }
-        final position = ((ph - 2.0) / 6.0).clamp(0.0, 1.0);
-        final levelColor = _levelColor(ph);
+        final position    = ((ph - 2.0) / 6.0).clamp(0.0, 1.0);
+        final levelColor  = _levelColor(ph);
 
         return Padding(
           padding: const EdgeInsets.only(top: 12),
@@ -502,8 +587,8 @@ class _PhScaleIndicator extends StatelessWidget {
                       ),
                     ),
                     Positioned(
-                      left: (position * constraints.maxWidth - 8).clamp(
-                          0.0, constraints.maxWidth - 16),
+                      left: (position * constraints.maxWidth - 8)
+                          .clamp(0.0, constraints.maxWidth - 16),
                       top: -4,
                       child: Container(
                         width: 16,
@@ -511,8 +596,7 @@ class _PhScaleIndicator extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           shape: BoxShape.circle,
-                          border:
-                              Border.all(color: levelColor, width: 2.5),
+                          border: Border.all(color: levelColor, width: 2.5),
                           boxShadow: const [
                             BoxShadow(color: Colors.black26, blurRadius: 4)
                           ],
@@ -546,7 +630,7 @@ class _PhScaleIndicator extends StatelessWidget {
     );
   }
 
-  Color _levelColor(double ph) {
+  Color  _levelColor(double ph) {
     if (ph < 3.5) return AppColors.error;
     if (ph < 4.0) return AppColors.warning;
     if (ph < 5.5) return AppColors.success;
@@ -626,9 +710,7 @@ class _AlertBanner extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            isCritical
-                ? Icons.error_rounded
-                : Icons.warning_amber_rounded,
+            isCritical ? Icons.error_rounded : Icons.warning_amber_rounded,
             color: color,
             size: 24,
           ),
@@ -646,8 +728,8 @@ class _AlertBanner extends StatelessWidget {
                   Text('Valor: ', style: AppTextStyles.bodySmall),
                   Text(
                     alert.triggerValue.toStringAsFixed(2),
-                    style: AppTextStyles.numericSmall.copyWith(
-                        color: color, fontWeight: FontWeight.w700),
+                    style: AppTextStyles.numericSmall
+                        .copyWith(color: color, fontWeight: FontWeight.w700),
                   ),
                   Text('  Umbral: ', style: AppTextStyles.bodySmall),
                   Text(
@@ -659,16 +741,15 @@ class _AlertBanner extends StatelessWidget {
             ),
           ),
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
               alert.level.name.toUpperCase(),
-              style: AppTextStyles.labelSmall.copyWith(
-                  color: color, fontWeight: FontWeight.w700),
+              style: AppTextStyles.labelSmall
+                  .copyWith(color: color, fontWeight: FontWeight.w700),
             ),
           ),
         ],
@@ -677,12 +758,12 @@ class _AlertBanner extends StatelessWidget {
   }
 
   String _title(AlertType type) => switch (type) {
-        AlertType.phCritical   => 'pH crítico — detener fermentación',
-        AlertType.phHigh       => 'pH bajo — monitorear cada hora',
-        AlertType.tempCritical => 'Temperatura crítica del mucílago',
-        AlertType.tempHigh     => 'Temperatura elevada del mucílago',
-        AlertType.humidityHigh => 'Humedad ambiental elevada',
-      };
+    AlertType.phCritical   => 'pH crítico — detener fermentación',
+    AlertType.phHigh       => 'pH bajo — monitorear cada hora',
+    AlertType.tempCritical => 'Temperatura crítica del mucílago',
+    AlertType.tempHigh     => 'Temperatura elevada del mucílago',
+    AlertType.humidityHigh => 'Humedad ambiental elevada',
+  };
 }
 
 // ── Projection card ────────────────────────────────────────────────────────
@@ -693,11 +774,9 @@ class _ProjectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isNegative = hours <= 0;
-    final color = isNegative ? AppColors.error : AppColors.success;
-    final containerColor = isNegative
-        ? AppColors.errorContainer
-        : AppColors.successContainer;
+    final isNegative     = hours <= 0;
+    final color          = isNegative ? AppColors.error : AppColors.success;
+    final containerColor = isNegative ? AppColors.errorContainer : AppColors.successContainer;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -733,8 +812,7 @@ class _ProjectionCard extends StatelessWidget {
                         ),
                         TextSpan(
                           text: ' h restantes',
-                          style: AppTextStyles.bodyMedium
-                              .copyWith(color: color),
+                          style: AppTextStyles.bodyMedium.copyWith(color: color),
                         ),
                       ]),
                     ),
@@ -759,8 +837,7 @@ class _RecsSection extends StatelessWidget {
       children: [
         Row(children: [
           Container(
-            width: 4,
-            height: 22,
+            width: 4, height: 22,
             decoration: BoxDecoration(
               color: AppColors.aiBlue,
               borderRadius: BorderRadius.circular(2),
@@ -773,16 +850,14 @@ class _RecsSection extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
               color: AppColors.aiBlueContainer,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
               '${recommendations.length}',
-              style: AppTextStyles.aiCaption
-                  .copyWith(fontWeight: FontWeight.w700),
+              style: AppTextStyles.aiCaption.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
         ]),
@@ -833,38 +908,26 @@ class _ReadingHistory extends StatelessWidget {
           ),
           child: Column(
             children: [
-              // Header
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(children: [
+                  Expanded(child: Text('Horas', style: AppTextStyles.labelSmall)),
                   Expanded(
-                    child: Text('Horas', style: AppTextStyles.labelSmall),
-                  ),
+                      child: Center(
+                          child: Text('pH', style: AppTextStyles.labelSmall))),
                   Expanded(
-                    child: Center(
-                      child: Text('pH', style: AppTextStyles.labelSmall),
-                    ),
-                  ),
+                      child: Center(
+                          child: Text('Temp °C', style: AppTextStyles.labelSmall))),
                   Expanded(
-                    child: Center(
-                      child: Text('Temp °C', style: AppTextStyles.labelSmall),
-                    ),
-                  ),
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: Text('Estado', style: AppTextStyles.labelSmall),
-                    ),
-                  ),
+                      child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Text('Estado', style: AppTextStyles.labelSmall))),
                 ]),
               ),
               const Divider(height: 1, color: AppColors.divider),
-              // Rows — latest first
-              ...readings.reversed.indexed.map((e) => _ReadingRow(
-                    reading: e.$2,
-                    isLatest: e.$1 == 0,
-                  )),
+              ...readings.reversed.indexed.map(
+                (e) => _ReadingRow(reading: e.$2, isLatest: e.$1 == 0),
+              ),
             ],
           ),
         ),
@@ -876,7 +939,7 @@ class _ReadingHistory extends StatelessWidget {
 class _ReadingRow extends StatelessWidget {
   const _ReadingRow({required this.reading, required this.isLatest});
   final FermentationReading reading;
-  final bool isLatest;
+  final bool                isLatest;
 
   @override
   Widget build(BuildContext context) {
@@ -887,10 +950,10 @@ class _ReadingRow extends StatelessWidget {
             : AppColors.success;
 
     return Container(
-      color:
-          isLatest ? AppColors.aiBlueContainer.withValues(alpha: 0.45) : null,
-      padding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      color: isLatest
+          ? AppColors.aiBlueContainer.withValues(alpha: 0.45)
+          : null,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(children: [
         Expanded(
           child: Text(

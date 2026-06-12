@@ -94,6 +94,7 @@ backend/
 - Correr `dart run build_runner build` tras cualquier cambio en `@freezed`, tablas Drift, o `@riverpod`; errores de IDE previos a la regeneración son normales
 - No añadir dependencias sin verificar compatibilidad con Flutter ≥3.22
 - `AUDIT.md` es la fuente de verdad de deudas técnicas y bloques de trabajo — actualizar al cerrar cada bloque
+- **Integridad de código al modificar archivos existentes:** preferir `Edit` quirúrgico sobre `Write` completo; si se usa `Write`, leer el archivo entero antes y preservar explícitamente todas las clases/widgets que no sean el objetivo del cambio. Ante cualquier instrucción de "quita X", confirmar qué se mantiene antes de reescribir. El contexto de conversación se comprime — `git diff` es la única fuente de verdad sobre qué cambió realmente.
 
 ## Ahorra tokens
 

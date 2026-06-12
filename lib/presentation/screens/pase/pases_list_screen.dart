@@ -50,7 +50,7 @@ class _PasesListScreenState extends ConsumerState<PasesListScreen>
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go(AppRoutes.pasesCreate),
+        onPressed: () => context.push(AppRoutes.pasesCreate),
         backgroundColor: AppColors.caramel,
         icon: const Icon(Icons.add, color: Colors.white),
         label: Text('Nuevo pase',
@@ -137,7 +137,7 @@ class _PaseCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final (icon, color, etapaLabel) = _etapaInfo(pase.etapaActual, pase.status);
     return GestureDetector(
-      onTap: () => context.go('/lots/${pase.lotId}/pases/${pase.id}'),
+      onTap: () => context.push('${AppRoutes.pases}/${pase.id}'),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(

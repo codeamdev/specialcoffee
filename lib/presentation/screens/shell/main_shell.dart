@@ -15,15 +15,16 @@ class _Tab {
 
 const _tabHome         = _Tab(Icons.dashboard_outlined,   Icons.dashboard,   'Inicio',   AppRoutes.home);
 const _tabBaristaHome  = _Tab(Icons.dashboard_outlined,   Icons.dashboard,   'Inicio',   AppRoutes.baristaHome);
+const _tabPases        = _Tab(Icons.agriculture_outlined, Icons.agriculture, 'Cosecha',  AppRoutes.pases);
 const _tabLots         = _Tab(Icons.inventory_2_outlined, Icons.inventory_2, 'Lotes',    AppRoutes.lots);
 const _tabBrew         = _Tab(Icons.coffee_outlined,      Icons.coffee,      'Preparar', AppRoutes.brew);
 const _tabProfile      = _Tab(Icons.person_outline,       Icons.person,      'Perfil',   AppRoutes.profile);
 
 List<_Tab> _tabsFor(String role) => switch (role) {
-  'barista'                          => [_tabBaristaHome, _tabBrew, _tabProfile],
-  'brand_manager' || 'entrepreneur'  => [_tabHome, _tabLots, _tabBrew, _tabProfile],
-  'coffee_master' || 'producer_integral' => [_tabHome, _tabLots, _tabBrew, _tabProfile],
-  _                                  => [_tabHome, _tabLots, _tabProfile], // producer + legacy
+  'barista'                              => [_tabBaristaHome, _tabBrew, _tabProfile],
+  'brand_manager' || 'entrepreneur'      => [_tabHome, _tabLots, _tabBrew, _tabProfile],
+  'coffee_master' || 'producer_integral' => [_tabHome, _tabPases, _tabBrew, _tabProfile],
+  _                                      => [_tabHome, _tabPases, _tabLots, _tabProfile], // producer + legacy
 };
 
 class MainShell extends ConsumerWidget {

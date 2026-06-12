@@ -169,8 +169,6 @@ class _LotCreateScreenState extends ConsumerState<LotCreateScreen> {
           keyboardType: TextInputType.number,
           style: AppTextStyles.numericSmall.copyWith(color: AppColors.onSurface),
         ),
-        const SizedBox(height: 8),
-        const _NotSyncedNote(),
         const SizedBox(height: 14),
         Text('Tipo de plantación',
             style: AppTextStyles.labelMedium
@@ -227,8 +225,6 @@ class _LotCreateScreenState extends ConsumerState<LotCreateScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 8),
-        const _NotSyncedNote(),
       ],
     );
   }
@@ -272,8 +268,6 @@ class _LotCreateScreenState extends ConsumerState<LotCreateScreen> {
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           style: AppTextStyles.numericSmall.copyWith(color: AppColors.onSurface),
         ),
-        const SizedBox(height: 8),
-        const _NotSyncedNote(),
       ],
     );
   }
@@ -475,34 +469,7 @@ class _VarietyMultiSelect extends StatelessWidget {
                       .copyWith(color: AppColors.caramel)),
             ],
           ),
-          const SizedBox(height: 4),
-          const _NotSyncedNote(),
         ],
-      ],
-    );
-  }
-}
-
-// ── Not-synced disclaimer ─────────────────────────────────────────────────
-
-class _NotSyncedNote extends StatelessWidget {
-  const _NotSyncedNote();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Icon(Icons.sync_disabled_outlined,
-            size: 13, color: AppColors.onSurfaceVariant),
-        const SizedBox(width: 4),
-        Expanded(
-          child: Text(
-            'Campo no sincronizado — pendiente de revisión de producto.',
-            style: AppTextStyles.bodySmall
-                .copyWith(color: AppColors.onSurfaceVariant),
-          ),
-        ),
       ],
     );
   }

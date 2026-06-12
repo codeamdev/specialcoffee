@@ -15,6 +15,7 @@ class FermentationState {
   final String lotId;
   final String? sessionId;
   final String processType;
+  final DateTime? sessionStartedAt;
   final List<FermentationReading> readings;
   final List<Alert> activeAlerts;
   final List<Recommendation> recommendations;
@@ -26,6 +27,7 @@ class FermentationState {
     required this.lotId,
     this.sessionId,
     required this.processType,
+    this.sessionStartedAt,
     this.readings = const [],
     this.activeAlerts = const [],
     this.recommendations = const [],
@@ -43,6 +45,7 @@ class FermentationState {
   FermentationState copyWith({
     String? Function()? sessionId,
     String? processType,
+    DateTime? Function()? sessionStartedAt,
     List<FermentationReading>? readings,
     List<Alert>? activeAlerts,
     List<Recommendation>? recommendations,
@@ -54,6 +57,7 @@ class FermentationState {
         lotId: lotId,
         sessionId: sessionId != null ? sessionId() : this.sessionId,
         processType: processType ?? this.processType,
+        sessionStartedAt: sessionStartedAt != null ? sessionStartedAt() : this.sessionStartedAt,
         readings: readings ?? this.readings,
         activeAlerts: activeAlerts ?? this.activeAlerts,
         recommendations: recommendations ?? this.recommendations,
@@ -93,6 +97,7 @@ class FermentationNotifier extends _$FermentationNotifier {
           lotId: lotId,
           sessionId: session.id,
           processType: session.processType,
+          sessionStartedAt: session.createdAt,
           readings: aiReadings,
         );
       } catch (e, st) {
@@ -118,7 +123,10 @@ class FermentationNotifier extends _$FermentationNotifier {
           processType: state.processType,
         );
         sessionId = session.id;
-        state = state.copyWith(sessionId: () => sessionId);
+        state = state.copyWith(
+          sessionId: () => sessionId,
+          sessionStartedAt: () => session.createdAt,
+        );
       } catch (e, st) {
         if (kDebugMode) debugPrint('[FermentationProvider] createSession: $e\n$st');
         state = state.copyWith(error: () => 'No se pudo iniciar la sesiÃ³n: los datos no se guardarÃ¡n.');
