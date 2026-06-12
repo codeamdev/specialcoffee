@@ -116,7 +116,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 21;
+  int get schemaVersion => 22;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -246,6 +246,16 @@ class AppDatabase extends _$AppDatabase {
               } catch (_) {
                 // Column already exists — idempotent
               }
+            }
+          }
+          // v22: farmer field on coffee_references
+          if (from < 22) {
+            try {
+              await m.database.customStatement(
+                'ALTER TABLE coffee_references ADD COLUMN farmer TEXT',
+              );
+            } catch (_) {
+              // Column already exists — idempotent
             }
           }
         },

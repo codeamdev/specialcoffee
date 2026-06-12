@@ -4,6 +4,7 @@ class CoffeeReference {
     required this.ownerId,
     required this.name,
     this.origin,
+    this.farmer,
     required this.roastLevel,
     this.roastDate,
     this.packagedDate,
@@ -18,6 +19,7 @@ class CoffeeReference {
   final String    ownerId;
   final String    name;
   final String?   origin;
+  final String?   farmer;
   final String    roastLevel;
   final DateTime? roastDate;
   final DateTime? packagedDate;

@@ -13,22 +13,26 @@ Stream<List<CoffeeReference>> coffeeReferences(Ref ref) =>
 class CoffeeReferenceState {
   const CoffeeReferenceState({
     this.isLoading = false,
-    this.isSaved = false,
+    this.isSaved   = false,
+    this.saved,
     this.error,
   });
 
-  final bool    isLoading;
-  final bool    isSaved;
-  final Object? error;
+  final bool               isLoading;
+  final bool               isSaved;
+  final CoffeeReference?   saved;
+  final Object?            error;
 
   CoffeeReferenceState copyWith({
-    bool?    isLoading,
-    bool?    isSaved,
-    Object?  error,
+    bool?              isLoading,
+    bool?              isSaved,
+    CoffeeReference?   saved,
+    Object?            error,
   }) =>
       CoffeeReferenceState(
         isLoading: isLoading ?? this.isLoading,
         isSaved:   isSaved   ?? this.isSaved,
+        saved:     saved     ?? this.saved,
         error:     error,
       );
 }
@@ -41,12 +45,14 @@ class CoffeeReferenceNotifier extends _$CoffeeReferenceNotifier {
   Future<void> save(CoffeeReference reference) async {
     state = state.copyWith(isLoading: true);
     try {
-      await ref.read(coffeeReferenceLocalRepoProvider).save(reference);
-      state = const CoffeeReferenceState(isSaved: true);
+      final saved = await ref.read(coffeeReferenceLocalRepoProvider).save(reference);
+      state = CoffeeReferenceState(isSaved: true, saved: saved);
     } catch (e) {
       state = CoffeeReferenceState(error: e);
     }
   }
+
+  void reset() => state = const CoffeeReferenceState();
 
   Future<void> updateStatus(String id, String status) async {
     state = state.copyWith(isLoading: true);

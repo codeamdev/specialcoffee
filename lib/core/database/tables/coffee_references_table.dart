@@ -7,6 +7,7 @@ class CoffeeReferences extends Table {
 
   TextColumn get name       => text()();
   TextColumn get origin     => text().nullable()();
+  TextColumn get farmer     => text().nullable()();
   TextColumn get roastLevel => text().named('roast_level')();
 
   DateTimeColumn get roastDate    => dateTime().named('roast_date').nullable()();
