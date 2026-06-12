@@ -63,7 +63,7 @@ class _DryingScreenState extends ConsumerState<DryingScreen> {
           children: [
             const GeminiStatusBanner(),
             if (state.isAtTarget) ...[
-              _CompleteCard(),
+              _CompleteCard(lotId: widget.lotId),
               const SizedBox(height: 12),
             ] else if (state.isOverDried) ...[
               _OverDriedBanner(),
@@ -77,6 +77,8 @@ class _DryingScreenState extends ConsumerState<DryingScreen> {
               DryingPhaseCard(moisturePct: state.lastReading!.moisturePct),
               const SizedBox(height: 12),
             ],
+            const _HumidityGuide(),
+            const SizedBox(height: 12),
             _buildReadingForm(state),
             if (state.recommendations.isNotEmpty) ...[
               const SizedBox(height: 20),
@@ -294,6 +296,9 @@ class _DryingScreenState extends ConsumerState<DryingScreen> {
 // ── Status banners ─────────────────────────────────────────────────────────
 
 class _CompleteCard extends StatelessWidget {
+  const _CompleteCard({required this.lotId});
+  final String lotId;
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -303,26 +308,165 @@ class _CompleteCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
       ),
-      child: Row(children: [
-        const Icon(Icons.check_circle_rounded,
-            color: AppColors.success, size: 28),
-        const SizedBox(width: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            const Icon(Icons.check_circle_rounded,
+                color: AppColors.success, size: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Secado completado',
+                      style: AppTextStyles.labelLarge
+                          .copyWith(color: AppColors.success)),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Humedad dentro del rango SCA (10.5–12.0%). Listo para almacenamiento o trilla.',
+                    style: AppTextStyles.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          ]),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.arrow_forward, size: 16),
+              label: const Text('Ir al detalle del lote'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.success,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 11),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HumidityGuide extends StatefulWidget {
+  const _HumidityGuide();
+
+  @override
+  State<_HumidityGuide> createState() => _HumidityGuideState();
+}
+
+class _HumidityGuideState extends State<_HumidityGuide> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFE1F5FE),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF01579B).withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Row(children: [
+                const Icon(Icons.water_drop_outlined,
+                    size: 15, color: Color(0xFF01579B)),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text('¿Cómo medir la humedad del café y ambiental?',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF01579B),
+                      )),
+                ),
+                Icon(
+                  _expanded
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                  size: 18,
+                  color: const Color(0xFF01579B),
+                ),
+              ]),
+            ),
+          ),
+          if (_expanded)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _GuideItem(
+                    icon: Icons.grain,
+                    title: 'Humedad del café (higrómetro de grano)',
+                    body:
+                        'Usa un higrómetro de inserción para grano (Wile 55, Pfeuffer HE 50, '
+                        'Draminski o similar). Introduce la sonda directamente en el grano '
+                        'pergamino húmedo, presiona firmemente y mantén 30 s. Lee el % y '
+                        'anota. Meta SCA: 10.5–12.0 %. Calibra el equipo mensualmente con '
+                        'estándar certificado.',
+                  ),
+                  const SizedBox(height: 8),
+                  _GuideItem(
+                    icon: Icons.thermostat_outlined,
+                    title: 'Humedad ambiental (higrómetro / datalogger)',
+                    body:
+                        'Usa un termohigrómetro digital (Govee, Inkbird IBS-TH2, AcuRite) o '
+                        'datalogger. Ubícalo a la sombra, a 1–1.5 m del suelo y lejos de '
+                        'superficies de secado. Suspende secado al aire libre si HR > 80 %; '
+                        'riesgo de rehidratación y hongos si HR > 85 %.\n'
+                        'Fuente: Manual del Cafetero Colombiano (FNC/Cenicafé).',
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GuideItem extends StatelessWidget {
+  const _GuideItem({required this.icon, required this.title, required this.body});
+  final IconData icon;
+  final String   title;
+  final String   body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 14, color: const Color(0xFF01579B)),
+        const SizedBox(width: 6),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Secado completado',
-                  style: AppTextStyles.labelLarge
-                      .copyWith(color: AppColors.success)),
+              Text(title,
+                  style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF01579B))),
               const SizedBox(height: 2),
-              Text(
-                'Humedad dentro del rango SCA (10.5–12.0%). Trasladar a almacenamiento.',
-                style: AppTextStyles.bodySmall,
-              ),
+              Text(body,
+                  style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF01579B),
+                      height: 1.4)),
             ],
           ),
         ),
-      ]),
+      ],
     );
   }
 }

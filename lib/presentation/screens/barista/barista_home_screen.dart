@@ -49,9 +49,11 @@ class BaristaHomeScreen extends ConsumerWidget {
   }
 
   void _showForm(BuildContext context, WidgetRef ref) {
+    ref.read(coffeeReferenceProvider.notifier).reset();
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const CoffeeReferenceForm(),
     );

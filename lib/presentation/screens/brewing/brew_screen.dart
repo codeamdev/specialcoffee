@@ -223,7 +223,12 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
           final m       = _methods[i];
           final selected = _method == m.id;
           return GestureDetector(
-            onTap: () => setState(() => _method = m.id),
+            onTap: () {
+              if (_method != m.id) {
+                ref.read(brewProvider.notifier).reset();
+                setState(() => _method = m.id);
+              }
+            },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               curve: Curves.easeOut,
@@ -359,7 +364,10 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
                         children: _roastLevels.map((r) {
                           final sel = _roastLevel == r.$1;
                           return GestureDetector(
-                            onTap: hasRef ? null : () => setState(() => _roastLevel = r.$1),
+                            onTap: hasRef ? null : () {
+                              ref.read(brewProvider.notifier).reset();
+                              setState(() => _roastLevel = r.$1);
+                            },
                             child: ChoiceChip(
                               label: Text(r.$2),
                               selected: sel,
@@ -368,7 +376,10 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
                                 color: sel ? AppColors.aiBlue : AppColors.onSurfaceVariant,
                                 fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
                               ),
-                              onSelected: hasRef ? null : (_) => setState(() => _roastLevel = r.$1),
+                              onSelected: hasRef ? null : (_) {
+                                ref.read(brewProvider.notifier).reset();
+                                setState(() => _roastLevel = r.$1);
+                              },
                             ),
                           );
                         }).toList(),
@@ -404,7 +415,10 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
               children: _processes.map((p) {
                 final sel = _processType == p.$1;
                 return GestureDetector(
-                  onTap: hasRef ? null : () => setState(() => _processType = sel ? null : p.$1),
+                  onTap: hasRef ? null : () {
+                    ref.read(brewProvider.notifier).reset();
+                    setState(() => _processType = sel ? null : p.$1);
+                  },
                   child: ChoiceChip(
                     label: Text(p.$2),
                     selected: sel,
@@ -413,7 +427,10 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
                       color: sel ? AppColors.aiBlue : AppColors.onSurfaceVariant,
                       fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
                     ),
-                    onSelected: hasRef ? null : (_) => setState(() => _processType = sel ? null : p.$1),
+                    onSelected: hasRef ? null : (_) {
+                      ref.read(brewProvider.notifier).reset();
+                      setState(() => _processType = sel ? null : p.$1);
+                    },
                   ),
                 );
               }).toList(),
@@ -471,6 +488,8 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
                 value: _taste,
                 onChanged: (v) => setState(() => _taste = v)),
             const SizedBox(height: 14),
+            _TdsInfoTile(),
+            const SizedBox(height: 10),
             Row(children: [
               Text('TDS objetivo:',
                   style: AppTextStyles.labelMedium),
@@ -697,7 +716,7 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
       backgroundColor: Colors.transparent,
       builder: (_) => CoffeeReferenceForm(
         existing: _coffeeRef,
-        onSaved: (saved) => setState(() => _coffeeRef = saved),
+        onSaved: (saved) => setState(() => _applyReference(saved)),
       ),
     );
   }
@@ -1318,6 +1337,69 @@ class _DiagField extends StatelessWidget {
         if (n == null || n < lo || n > hi) return '$lo–$hi';
         return null;
       },
+    );
+  }
+}
+
+// ── TDS info tile ─────────────────────────────────────────────────────────────
+
+class _TdsInfoTile extends StatefulWidget {
+  @override
+  State<_TdsInfoTile> createState() => _TdsInfoTileState();
+}
+
+class _TdsInfoTileState extends State<_TdsInfoTile> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.infoContainer,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+              child: Row(children: [
+                const Icon(Icons.science_outlined, size: 15, color: AppColors.info),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text('¿Qué es el TDS y cómo se mide?',
+                      style: AppTextStyles.labelSmall
+                          .copyWith(color: AppColors.info)),
+                ),
+                Icon(
+                  _expanded
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                  size: 18,
+                  color: AppColors.info,
+                ),
+              ]),
+            ),
+          ),
+          if (_expanded)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+              child: Text(
+                'TDS (Total Dissolved Solids) es el porcentaje de sólidos disueltos en la '
+                'infusión final. Se mide con un refractómetro óptico para café (Atago '
+                'PAL-COFFEE, Difluid R2 o similar): toma 2–3 gotas de café frío sobre el '
+                'prisma y lee el valor directamente.\n\n'
+                'Rangos SCA: filtro 1.15–1.45 % · espresso 8–12 %.\n'
+                'Por debajo del rango → subextracción (café aguado). '
+                'Por encima → sobreextracción (amargor astringente).',
+                style: AppTextStyles.bodySmall
+                    .copyWith(color: AppColors.info.withValues(alpha: 0.85)),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

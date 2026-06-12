@@ -100,7 +100,6 @@ class _LotCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (statusLabel, statusColor) = _statusInfo(lot.status);
     final (processLabel, processIcon) = _processInfo(lot.processType);
 
     return Card(
@@ -118,18 +117,11 @@ class _LotCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      lot.varietyName,
-                      style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  _StatusChip(label: statusLabel, color: statusColor),
-                ],
+              Text(
+                lot.varietyName,
+                style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 8),
               Row(
@@ -164,15 +156,6 @@ class _LotCard extends StatelessWidget {
     );
   }
 
-  (String, Color) _statusInfo(String status) => switch (status) {
-    'pending'      => ('Pendiente',     AppColors.warning),
-    'fermenting'   => ('Fermentando',   AppColors.aiBlue),
-    'drying'       => ('Secando',       AppColors.caramel),
-    'milling'      => ('Trillando',     AppColors.roleProcessor),
-    'ready'        => ('Listo',         AppColors.success),
-    _              => (status,          AppColors.onSurfaceVariant),
-  };
-
   (String, IconData) _processInfo(String process) => switch (process) {
     'lavado'    => ('Lavado',    Icons.water_drop_outlined),
     'natural'   => ('Natural',   Icons.wb_sunny_outlined),
@@ -183,31 +166,5 @@ class _LotCard extends StatelessWidget {
 
   String _formatDate(DateTime dt) {
     return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.label, required this.color});
-
-  final String label;
-  final Color  color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-      decoration: BoxDecoration(
-        color:        color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(20),
-        border:       Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Text(
-        label,
-        style: AppTextStyles.labelSmall.copyWith(
-          color:      color,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
   }
 }

@@ -154,6 +154,10 @@ class _LotDetail extends StatelessWidget {
           _InfoItem(Icons.water_drop_outlined, 'Humedad', '${lot.ambientHumidityPct.toStringAsFixed(0)} %'),
           _InfoItem(Icons.umbrella_outlined, 'Lluvia', '${lot.rainProbabilityPct.toStringAsFixed(0)} %'),
           _InfoItem(Icons.terrain_outlined, 'Altitud', '${lot.altitudeMasl} m.s.n.m.'),
+          if (lot.latitude != null)
+            _InfoItem(Icons.gps_fixed_outlined, 'Latitud', lot.latitude!.toStringAsFixed(6)),
+          if (lot.longitude != null)
+            _InfoItem(Icons.gps_fixed_outlined, 'Longitud', lot.longitude!.toStringAsFixed(6)),
         ]),
         const SizedBox(height: 20),
         if (lot.notes != null && lot.notes!.isNotEmpty) ...[
@@ -175,7 +179,6 @@ class _HeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (statusLabel, statusColor) = _statusInfo(lot.status);
     final (processLabel, _) = _processInfo(lot.processType);
 
     return Container(
@@ -188,28 +191,7 @@ class _HeaderCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(lot.varietyName, style: AppTextStyles.displaySmall),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: statusColor.withValues(alpha: 0.3)),
-                ),
-                child: Text(
-                  statusLabel,
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: statusColor,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
+          Text(lot.varietyName, style: AppTextStyles.displaySmall),
           const SizedBox(height: 6),
           Text(
             '$processLabel · ${lot.region.isNotEmpty ? lot.region : "—"}',
@@ -224,15 +206,6 @@ class _HeaderCard extends StatelessWidget {
       ),
     );
   }
-
-  (String, Color) _statusInfo(String status) => switch (status) {
-    'pending'    => ('Pendiente',   AppColors.warning),
-    'fermenting' => ('Fermentando', AppColors.aiBlue),
-    'drying'     => ('Secando',     AppColors.caramel),
-    'milling'    => ('Trillando',   AppColors.roleProcessor),
-    'ready'      => ('Listo',       AppColors.success),
-    _            => (status,        AppColors.onSurfaceVariant),
-  };
 
   (String, IconData) _processInfo(String process) => switch (process) {
     'lavado'    => ('Lavado',    Icons.water_drop_outlined),

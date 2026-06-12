@@ -76,6 +76,8 @@ class ProfileScreen extends ConsumerWidget {
           ],
           _LearningModeIndicator(),
           const SizedBox(height: 12),
+          _GlossaryTile(),
+          const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
@@ -212,6 +214,47 @@ class _RoleBadge extends StatelessWidget {
         style: AppTextStyles.labelMedium.copyWith(
           color:      color,
           fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+class _GlossaryTile extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.push(AppRoutes.glossary),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.outlineVariant),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.menu_book_outlined,
+                size: 20, color: AppColors.caramel),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Base de investigación',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                          fontWeight: FontWeight.w500)),
+                  Text(
+                    'Glosario científico + preguntas a la IA',
+                    style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.onSurfaceVariant),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios_rounded,
+                size: 14, color: AppColors.onSurfaceVariant),
+          ],
         ),
       ),
     );
