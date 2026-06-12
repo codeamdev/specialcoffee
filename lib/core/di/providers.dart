@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:special_coffee/core/database/app_database.dart';
 import 'package:special_coffee/data/repositories/classification_repository_local.dart';
@@ -225,16 +227,49 @@ LotCertificationRepository lotCertificationLocalRepo(Ref ref) {
 }
 
 // ── Connectivity watcher — dispara sync al recuperar conexión ────────────────
+//
+// Producción: connectivity_plus detecta cambios de red (WiFi / datos móviles).
+// Dev (DEV_MODE=true): poller cada 30 s prueba si localhost:3001 responde;
+//   cualquier respuesta HTTP (incluso 401) = backend activo.
 
 @Riverpod(keepAlive: true)
 void connectivityWatcher(Ref ref) {
-  bool wasOffline = true;
-  final sub = Connectivity().onConnectivityChanged.listen((results) {
-    final isOnline = results.any((r) => r != ConnectivityResult.none);
-    if (isOnline && wasOffline) {
-      ref.read(syncServiceProvider).syncPendingReadings().ignore();
+  const isDevMode = bool.fromEnvironment('DEV_MODE', defaultValue: false);
+
+  if (isDevMode) {
+    bool wasDown = true;
+    final dio = Dio(BaseOptions(
+      connectTimeout: const Duration(seconds: 3),
+      receiveTimeout: const Duration(seconds: 3),
+    ));
+
+    Future<void> check() async {
+      bool isUp;
+      try {
+        await dio.get<void>('http://127.0.0.1:3001/api/');
+        isUp = true;
+      } on DioException catch (e) {
+        // Cualquier respuesta HTTP (401, 403…) = servidor activo
+        isUp = e.response != null;
+      }
+      if (isUp && wasDown) {
+        ref.read(syncServiceProvider).syncPendingReadings().ignore();
+      }
+      wasDown = !isUp;
     }
-    wasOffline = !isOnline;
-  });
-  ref.onDispose(sub.cancel);
+
+    check();
+    final timer = Timer.periodic(const Duration(seconds: 30), (_) => check());
+    ref.onDispose(timer.cancel);
+  } else {
+    bool wasOffline = true;
+    final sub = Connectivity().onConnectivityChanged.listen((results) {
+      final isOnline = results.any((r) => r != ConnectivityResult.none);
+      if (isOnline && wasOffline) {
+        ref.read(syncServiceProvider).syncPendingReadings().ignore();
+      }
+      wasOffline = !isOnline;
+    });
+    ref.onDispose(sub.cancel);
+  }
 }
