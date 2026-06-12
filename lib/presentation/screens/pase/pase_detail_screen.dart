@@ -637,8 +637,6 @@ class _DataCard extends StatelessWidget {
         ('Brix', '${pase.brixPromedio!.toStringAsFixed(1)} °Bx'),
       if (pase.pctMadurezVisual != null)
         ('% Madurez', '${pase.pctMadurezVisual!.toStringAsFixed(0)} %'),
-      if (pase.numOperarios != null)
-        ('Operarios', '${pase.numOperarios}'),
       if (pase.pesoFlotacionKg != null)
         ('Peso flotantes',
             '${pase.pesoFlotacionKg!.toStringAsFixed(1)} kg'),

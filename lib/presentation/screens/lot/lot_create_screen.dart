@@ -16,7 +16,9 @@ import 'package:special_coffee/presentation/providers/weather_provider.dart';
 // ── Screen ─────────────────────────────────────────────────────────────────
 
 class LotCreateScreen extends ConsumerStatefulWidget {
-  const LotCreateScreen({super.key});
+  const LotCreateScreen({super.key, this.existing});
+
+  final Lot? existing;
 
   @override
   ConsumerState<LotCreateScreen> createState() => _LotCreateScreenState();
@@ -32,14 +34,29 @@ class _LotCreateScreenState extends ConsumerState<LotCreateScreen> {
   final _plantAgeCtrl   = TextEditingController();
   final _notesCtrl       = TextEditingController();
 
-  Set<String> _selectedIds = {'var_castillo'};
+  Set<String> _selectedIds = {};
   String?     _plantType;
   bool        _saving      = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchGps();
+    final e = widget.existing;
+    if (e != null) {
+      _altitudeCtrl.text = e.altitudeMasl.toString();
+      _regionCtrl.text   = e.region;
+      if (e.latitude != null)      _latCtrl.text      = e.latitude!.toStringAsFixed(6);
+      if (e.longitude != null)     _lngCtrl.text      = e.longitude!.toStringAsFixed(6);
+      if (e.farmAreaHa != null)    _farmAreaCtrl.text  = e.farmAreaHa!.toString();
+      if (e.plantAgeYears != null) _plantAgeCtrl.text = e.plantAgeYears!.toString();
+      _notesCtrl.text = e.notes ?? '';
+      _plantType      = e.plantType;
+      _selectedIds    = e.blendVarietyIds != null
+          ? e.blendVarietyIds!.split(',').toSet()
+          : {e.varietyId};
+    } else {
+      _fetchGps();
+    }
   }
 
   Future<void> _fetchGps() async {
@@ -75,7 +92,7 @@ class _LotCreateScreenState extends ConsumerState<LotCreateScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.surface,
-      appBar: AppBar(title: const Text('Nuevo Lote')),
+      appBar: AppBar(title: Text(widget.existing == null ? 'Nuevo Lote' : 'Editar Lote')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 48),
         child: Form(
@@ -109,10 +126,6 @@ class _LotCreateScreenState extends ConsumerState<LotCreateScreen> {
           loading: () => const LinearProgressIndicator(),
           error:   (_, __) => const Text('Error al cargar variedades'),
           data: (varieties) {
-            if (_selectedIds.isNotEmpty &&
-                !varieties.any((v) => _selectedIds.contains(v.id))) {
-              _selectedIds = {varieties.isNotEmpty ? varieties.first.id : ''};
-            }
             return _VarietyMultiSelect(
               varieties: varieties,
               selectedIds: _selectedIds,
@@ -345,24 +358,25 @@ class _LotCreateScreenState extends ConsumerState<LotCreateScreen> {
       final names     = selected.map((v) => v.name).join(' + ');
       final isBlend   = selected.length > 1;
 
-      final lotId = const Uuid().v4();
+      final existing = widget.existing;
+      final lotId = existing?.id ?? const Uuid().v4();
       final lot = Lot(
-        id:               lotId,
-        userId:           userId,
-        varietyId:        primaryId,
-        varietyName:      names.isNotEmpty ? names : primaryId,
-        altitudeMasl:     int.parse(_altitudeCtrl.text.trim()),
-        region:           _regionCtrl.text.trim(),
-        latitude:         double.tryParse(_latCtrl.text.trim()),
-        longitude:        double.tryParse(_lngCtrl.text.trim()),
-        farmAreaHa:       double.tryParse(_farmAreaCtrl.text.trim()),
-        blendVarietyIds:  isBlend ? _selectedIds.join(',') : null,
-        plantAgeYears:    int.tryParse(_plantAgeCtrl.text.trim()),
-        plantType:        _plantType,
-        createdAt:        DateTime.now(),
-        notes: _notesCtrl.text.trim().isEmpty
-            ? null
-            : _notesCtrl.text.trim(),
+        id:              lotId,
+        userId:          userId,
+        varietyId:       primaryId,
+        varietyName:     names.isNotEmpty ? names : primaryId,
+        altitudeMasl:    int.parse(_altitudeCtrl.text.trim()),
+        region:          _regionCtrl.text.trim(),
+        processType:     existing?.processType ?? '',
+        status:          existing?.status ?? 'pending',
+        latitude:        double.tryParse(_latCtrl.text.trim()),
+        longitude:       double.tryParse(_lngCtrl.text.trim()),
+        farmAreaHa:      double.tryParse(_farmAreaCtrl.text.trim()),
+        blendVarietyIds: isBlend ? _selectedIds.join(',') : null,
+        plantAgeYears:   int.tryParse(_plantAgeCtrl.text.trim()),
+        plantType:       _plantType,
+        createdAt:       existing?.createdAt ?? DateTime.now(),
+        notes:           _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
       );
 
       await ref.read(lotLocalRepoProvider).saveLot(lot);

@@ -35,7 +35,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _nameCtrl  = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passCtrl  = TextEditingController();
-  String _role     = 'farmer';
+  String _role     = 'producer';
   bool _obscure    = true;
 
   @override
@@ -61,8 +61,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final authState = ref.watch(authProvider);
     final isLoading = authState.isLoading;
 
-    ref.listen(authProvider, (_, next) {
-      if (next.hasError) {
+    ref.listen(authProvider, (prev, next) {
+      if (next.hasError && prev?.isLoading == true) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(ApiClient.errorMessage(next.error!)),
           backgroundColor: AppColors.error,
@@ -140,7 +140,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Ingresa una contraseña';
-                    if (v.length < 6) return 'Mínimo 6 caracteres';
+                    if (v.length < 8) return 'Mínimo 8 caracteres';
                     return null;
                   },
                 ),

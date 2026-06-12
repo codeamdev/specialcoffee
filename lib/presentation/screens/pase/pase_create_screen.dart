@@ -31,12 +31,11 @@ class _PaseCreateScreenState extends ConsumerState<PaseCreateScreen> {
     ('anaerobic_carbonic', 'Anaeróbico Carbónico',  Icons.bubble_chart_outlined),
   ];
 
-  final _formKey       = GlobalKey<FormState>();
-  final _pesoCtrl      = TextEditingController();
-  final _brixCtrl      = TextEditingController();
-  final _madurezCtrl   = TextEditingController();
-  final _operariosCtrl = TextEditingController();
-  final _notasCtrl     = TextEditingController();
+  final _formKey      = GlobalKey<FormState>();
+  final _pesoCtrl     = TextEditingController();
+  final _brixCtrl     = TextEditingController();
+  final _madurezCtrl  = TextEditingController();
+  final _notasCtrl    = TextEditingController();
 
   DateTime _fecha       = DateTime.now();
   String   _tipoProceso = 'lavado';
@@ -57,7 +56,6 @@ class _PaseCreateScreenState extends ConsumerState<PaseCreateScreen> {
     _pesoCtrl.dispose();
     _brixCtrl.dispose();
     _madurezCtrl.dispose();
-    _operariosCtrl.dispose();
     _notasCtrl.dispose();
     super.dispose();
   }
@@ -129,13 +127,6 @@ class _PaseCreateScreenState extends ConsumerState<PaseCreateScreen> {
               hint:    'ej. 85',
               keyType: TextInputType.number,
             ),
-            const SizedBox(height: 12),
-            _Field(
-              ctrl:    _operariosCtrl,
-              label:   'N° operarios',
-              hint:    'ej. 4',
-              keyType: TextInputType.number,
-            ),
             const SizedBox(height: 20),
             _SectionLabel('Tipo de proceso'),
             const SizedBox(height: 10),
@@ -198,13 +189,12 @@ class _PaseCreateScreenState extends ConsumerState<PaseCreateScreen> {
         tipoProceso:      _tipoProceso,
         brixPromedio:     double.tryParse(_norm(_brixCtrl.text)),
         pctMadurezVisual: double.tryParse(_norm(_madurezCtrl.text)),
-        numOperarios:     int.tryParse(_operariosCtrl.text.trim()),
         notas:            _notasCtrl.text.trim().isEmpty ? null : _notasCtrl.text.trim(),
       );
       if (mounted) {
         ref.invalidate(pasesByLotProvider(lotId));
         ref.invalidate(activePasesProvider);
-        context.go('${AppRoutes.lots}/$lotId/pases/${pase.id}');
+        context.go('${AppRoutes.pases}/${pase.id}');
       }
     } catch (e) {
       if (mounted) {

@@ -153,7 +153,9 @@ class _ReferenceCard extends StatelessWidget {
     final status = _statusLabel(ref.status);
     final statusColor = _statusColor(ref.status);
 
-    return Container(
+    return GestureDetector(
+      onTap: () => context.push(AppRoutes.brew, extra: {'reference': ref}),
+      child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color:        Colors.white,
@@ -204,6 +206,7 @@ class _ReferenceCard extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 

@@ -30,7 +30,15 @@ class _CoffeeReferenceFormState extends ConsumerState<CoffeeReferenceForm> {
     ('dark',   'Oscuro'),
   ];
 
+  static const _processes = [
+    ('lavado',          'Lavado'),
+    ('natural',         'Natural'),
+    ('honey_yellow',    'Honey'),
+    ('anaerobic_lactic','Anaeróbico'),
+  ];
+
   String    _roastLevel   = 'medium';
+  String?   _processType;
   DateTime? _roastDate;
   DateTime? _packagedDate;
 
@@ -44,6 +52,7 @@ class _CoffeeReferenceFormState extends ConsumerState<CoffeeReferenceForm> {
     _grindNotes  = TextEditingController(text: e?.grindNotes ?? '');
     _tasteNotes  = TextEditingController(text: e?.tasteNotes ?? '');
     _roastLevel  = e?.roastLevel ?? 'medium';
+    _processType = e?.processType;
     _roastDate   = e?.roastDate;
     _packagedDate = e?.packagedDate;
   }
@@ -134,6 +143,54 @@ class _CoffeeReferenceFormState extends ConsumerState<CoffeeReferenceForm> {
                 controller: _farmer,
                 label:      'Caficultor',
                 icon:       Icons.person_outline,
+              ),
+              const SizedBox(height: 16),
+
+              // Proceso de beneficio
+              Text(
+                'Proceso de beneficio',
+                style: AppTextStyles.labelMedium
+                    .copyWith(color: AppColors.onSurfaceVariant),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: _processes.map((p) {
+                  final selected = _processType == p.$1;
+                  return GestureDetector(
+                    onTap: () => setState(
+                        () => _processType = selected ? null : p.$1),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? AppColors.caramel.withValues(alpha: 0.1)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: selected
+                              ? AppColors.caramel
+                              : AppColors.outlineVariant,
+                          width: selected ? 1.5 : 1.0,
+                        ),
+                      ),
+                      child: Text(
+                        p.$2,
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: selected
+                              ? AppColors.caramel
+                              : AppColors.onSurface,
+                          fontWeight: selected
+                              ? FontWeight.w600
+                              : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
               const SizedBox(height: 16),
 
@@ -279,6 +336,7 @@ class _CoffeeReferenceFormState extends ConsumerState<CoffeeReferenceForm> {
             name:         _name.text.trim(),
             origin:       _origin.text.trim().isEmpty ? null : _origin.text.trim(),
             farmer:       _farmer.text.trim().isEmpty ? null : _farmer.text.trim(),
+            processType:  _processType,
             roastLevel:   _roastLevel,
             roastDate:    _roastDate,
             packagedDate: _packagedDate,

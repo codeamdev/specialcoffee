@@ -31,7 +31,9 @@ class _Method {
 // ── Screen ─────────────────────────────────────────────────────────────────
 
 class BrewScreen extends ConsumerStatefulWidget {
-  const BrewScreen({super.key});
+  const BrewScreen({super.key, this.initialReference});
+
+  final CoffeeReference? initialReference;
 
   @override
   ConsumerState<BrewScreen> createState() => _BrewScreenState();
@@ -74,7 +76,6 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
   final _formKey        = GlobalKey<FormState>();
   final _diagFormKey    = GlobalKey<FormState>();
   final _scrollCtrl     = ScrollController();
-  final _recipeKey      = GlobalKey();
   final _roastDaysCtrl  = TextEditingController(text: '14');
   final _altitudeCtrl   = TextEditingController(text: '1800');
   final _hardnessCtrl   = TextEditingController();
@@ -84,9 +85,27 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
   final _yieldResultCtrl= TextEditingController();
 
   bool _tdsPrefilledFromHistory = false;
+  bool _recipeAdjOpen = true;
 
   // Coffee reference (optional, linked after saving via CoffeeReferenceForm)
   CoffeeReference? _coffeeRef;
+
+  @override
+  void initState() {
+    super.initState();
+    final ref = widget.initialReference;
+    if (ref != null) _applyReference(ref);
+  }
+
+  void _applyReference(CoffeeReference ref) {
+    _coffeeRef   = ref;
+    _roastLevel  = ref.roastLevel;
+    if (ref.processType != null) _processType = ref.processType;
+    if (ref.roastDate != null) {
+      _roastDaysCtrl.text =
+          DateTime.now().difference(ref.roastDate!).inDays.clamp(1, 365).toString();
+    }
+  }
 
   @override
   void dispose() {
@@ -161,9 +180,11 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
               curve: Curves.easeOut,
               child: state.hasRecipe
                   ? _RecipeCard(
-                      key: _recipeKey,
                       recipe: state.recipe!,
                       recs: state.recipeRecs,
+                      adjustmentsOpen: _recipeAdjOpen,
+                      onToggleAdjustments: () =>
+                          setState(() => _recipeAdjOpen = !_recipeAdjOpen),
                     )
                   : const SizedBox.shrink(),
             ),
@@ -278,6 +299,17 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
               children: [
                 _Sub('Café', Icons.eco_outlined),
                 const Spacer(),
+                // Picker — seleccionar de lista guardada
+                IconButton(
+                  onPressed: _showReferencePicker,
+                  icon: const Icon(Icons.coffee_outlined, size: 18),
+                  tooltip: 'Mis cafés guardados',
+                  color: AppColors.caramel,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+                const SizedBox(width: 6),
+                // Crear / editar referencia
                 GestureDetector(
                   onTap: _showCoffeeRefModal,
                   child: Container(
@@ -299,7 +331,7 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          hasRef ? (_coffeeRef!.name) : 'Agregar referencia',
+                          hasRef ? _coffeeRef!.name : 'Nuevo café',
                           style: AppTextStyles.labelSmall.copyWith(
                             color: hasRef ? AppColors.caramel : AppColors.onSurfaceVariant,
                             fontWeight: hasRef ? FontWeight.w600 : FontWeight.w400,
@@ -327,7 +359,7 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
                         children: _roastLevels.map((r) {
                           final sel = _roastLevel == r.$1;
                           return GestureDetector(
-                            onTap: () => setState(() => _roastLevel = r.$1),
+                            onTap: hasRef ? null : () => setState(() => _roastLevel = r.$1),
                             child: ChoiceChip(
                               label: Text(r.$2),
                               selected: sel,
@@ -336,7 +368,7 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
                                 color: sel ? AppColors.aiBlue : AppColors.onSurfaceVariant,
                                 fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
                               ),
-                              onSelected: (_) => setState(() => _roastLevel = r.$1),
+                              onSelected: hasRef ? null : (_) => setState(() => _roastLevel = r.$1),
                             ),
                           );
                         }).toList(),
@@ -349,6 +381,7 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
                   width: 88,
                   child: TextFormField(
                     controller: _roastDaysCtrl,
+                    readOnly: hasRef,
                     decoration: _inp('Días tueste'),
                     keyboardType: TextInputType.number,
                     style: AppTextStyles.numericSmall
@@ -371,7 +404,7 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
               children: _processes.map((p) {
                 final sel = _processType == p.$1;
                 return GestureDetector(
-                  onTap: () => setState(() => _processType = sel ? null : p.$1),
+                  onTap: hasRef ? null : () => setState(() => _processType = sel ? null : p.$1),
                   child: ChoiceChip(
                     label: Text(p.$2),
                     selected: sel,
@@ -380,7 +413,7 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
                       color: sel ? AppColors.aiBlue : AppColors.onSurfaceVariant,
                       fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
                     ),
-                    onSelected: (_) => setState(() => _processType = sel ? null : p.$1),
+                    onSelected: hasRef ? null : (_) => setState(() => _processType = sel ? null : p.$1),
                   ),
                 );
               }).toList(),
@@ -551,6 +584,109 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
     _scrollToRecipe();
   }
 
+  void _showReferencePicker() {
+    final refs = ref.read(coffeeReferencesProvider).value ?? [];
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36, height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.outlineVariant,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text('Mis cafés', style: AppTextStyles.displaySmall.copyWith(fontSize: 18)),
+            const SizedBox(height: 4),
+            const Text('Selecciona un café para pre-llenar la preparación.',
+                style: AppTextStyles.bodySmall),
+            const SizedBox(height: 16),
+            if (refs.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Center(
+                  child: Text('Aún no tienes cafés guardados.',
+                      style: AppTextStyles.bodyMedium
+                          .copyWith(color: AppColors.onSurfaceVariant)),
+                ),
+              )
+            else
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 320),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: refs.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (ctx, i) {
+                    final r = refs[i];
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.of(ctx).pop();
+                        setState(() => _applyReference(r));
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: _coffeeRef?.name == r.name
+                              ? AppColors.caramel.withValues(alpha: 0.08)
+                              : AppColors.surface,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: _coffeeRef?.name == r.name
+                                ? AppColors.caramel
+                                : AppColors.outlineVariant,
+                          ),
+                        ),
+                        child: Row(children: [
+                          const Icon(Icons.coffee, size: 18, color: AppColors.caramel),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(r.name,
+                                    style: AppTextStyles.labelMedium
+                                        .copyWith(fontWeight: FontWeight.w600)),
+                                if (r.origin != null || r.farmer != null)
+                                  Text(
+                                    [r.origin, r.farmer]
+                                        .whereType<String>()
+                                        .join(' · '),
+                                    style: AppTextStyles.labelSmall.copyWith(
+                                        color: AppColors.onSurfaceVariant),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          _RoastBadge(r.roastLevel),
+                        ]),
+                      ),
+                    );
+                  },
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showCoffeeRefModal() {
     // Reset notifier state so isSaved doesn't fire immediately on re-open
     ref.read(coffeeReferenceProvider.notifier).reset();
@@ -576,11 +712,12 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
 
   void _scrollToRecipe() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final ctx = _recipeKey.currentContext;
-      if (ctx != null) {
-        Scrollable.ensureVisible(ctx,
-            duration: const Duration(milliseconds: 480),
-            curve: Curves.easeOut);
+      if (_scrollCtrl.hasClients) {
+        _scrollCtrl.animateTo(
+          _scrollCtrl.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 480),
+          curve: Curves.easeOut,
+        );
       }
     });
   }
@@ -695,22 +832,22 @@ class _TasteSlider extends StatelessWidget {
 
 // ── Recipe card ────────────────────────────────────────────────────────────
 
-class _RecipeCard extends StatefulWidget {
-  const _RecipeCard(
-      {super.key, required this.recipe, required this.recs});
-  final BrewRecipe recipe;
+class _RecipeCard extends StatelessWidget {
+  const _RecipeCard({
+    required this.recipe,
+    required this.recs,
+    required this.adjustmentsOpen,
+    required this.onToggleAdjustments,
+  });
+
+  final BrewRecipe           recipe;
   final List<Recommendation> recs;
-
-  @override
-  State<_RecipeCard> createState() => _RecipeCardState();
-}
-
-class _RecipeCardState extends State<_RecipeCard> {
-  bool _adjustmentsOpen = true;
+  final bool                 adjustmentsOpen;
+  final VoidCallback         onToggleAdjustments;
 
   @override
   Widget build(BuildContext context) {
-    final r           = widget.recipe;
+    final r           = recipe;
     final isColdBrew  = r.method == 'cold_brew';
     final hasBloom    = r.bloomSeconds > 0;
     final hasMoka     = r.waterTempC == 0 && !isColdBrew;
@@ -806,14 +943,13 @@ class _RecipeCardState extends State<_RecipeCard> {
           const SizedBox(height: 10),
           _AdjAccordion(
             items:    r.adjustmentsApplied,
-            open:     _adjustmentsOpen,
-            onToggle: () =>
-                setState(() => _adjustmentsOpen = !_adjustmentsOpen),
+            open:     adjustmentsOpen,
+            onToggle: onToggleAdjustments,
           ),
         ],
 
         // ── AI recommendations ─────────────────────────────────────
-        if (widget.recs.isNotEmpty) ...[
+        if (recs.isNotEmpty) ...[
           const SizedBox(height: 18),
           Row(children: [
             Container(
@@ -827,7 +963,7 @@ class _RecipeCardState extends State<_RecipeCard> {
                     .copyWith(color: AppColors.aiBlue)),
           ]),
           const SizedBox(height: 8),
-          ...widget.recs.indexed.map((e) => RecommendationCard(
+          ...recs.indexed.map((e) => RecommendationCard(
                 recommendation: e.$2,
                 isTopCard: e.$1 == 0,
               )),
@@ -868,6 +1004,7 @@ class _RecipeCardState extends State<_RecipeCard> {
         'cold_brew'    => 'Cold Brew',
         _              => m.toUpperCase(),
       };
+
 }
 
 // ── Parameter cell ────────────────────────────────────────────────────────
@@ -1181,6 +1318,33 @@ class _DiagField extends StatelessWidget {
         if (n == null || n < lo || n > hi) return '$lo–$hi';
         return null;
       },
+    );
+  }
+}
+
+// ── Roast badge ───────────────────────────────────────────────────────────────
+
+class _RoastBadge extends StatelessWidget {
+  const _RoastBadge(this.level);
+  final String level;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = switch (level) {
+      'light'  => 'Claro',
+      'medium' => 'Medio',
+      'dark'   => 'Oscuro',
+      _        => level,
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.caramel.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(label,
+          style: AppTextStyles.labelSmall
+              .copyWith(color: AppColors.caramel, fontWeight: FontWeight.w600)),
     );
   }
 }

@@ -13,7 +13,6 @@ import 'package:special_coffee/domain/entities/lot.dart';
 import 'package:special_coffee/presentation/providers/auth_provider.dart';
 import 'package:special_coffee/presentation/providers/cupping_provider.dart';
 import 'package:special_coffee/presentation/providers/lot_provider.dart';
-import 'package:special_coffee/presentation/providers/lot_steps_provider.dart';
 
 class LotDetailScreen extends ConsumerWidget {
   const LotDetailScreen({super.key, required this.lotId});
@@ -23,12 +22,23 @@ class LotDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lotAsync = ref.watch(lotByIdProvider(lotId));
+    final role     = ref.watch(currentUserProvider)?.role ?? '';
+    const editRoles = {'producer_integral', 'producer', 'farmer', 'admin', 'processor'};
 
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: const Text('Detalle del lote'),
         actions: [
+          if (editRoles.contains(role))
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: 'Editar lote',
+              onPressed: () {
+                final lot = lotAsync.value;
+                if (lot != null) context.push('/lots/${lot.id}/edit', extra: lot);
+              },
+            ),
           IconButton(
             icon: const Icon(Icons.qr_code_outlined),
             tooltip: 'QR del lote',
@@ -152,9 +162,6 @@ class _LotDetail extends StatelessWidget {
           _NotesCard(lot.notes!),
           const SizedBox(height: 20),
         ],
-        _SectionTitle('Etapas del proceso'),
-        const SizedBox(height: 16),
-        _LotStepper(lotId: lot.id),
         _BatchInsightsCard(lotId: lot.id),
       ],
     );
@@ -333,207 +340,6 @@ class _NotesCard extends StatelessWidget {
       child: Text(notes, style: AppTextStyles.bodyMedium),
     );
   }
-}
-
-// ── Stepper ────────────────────────────────────────────────────────────────
-
-class _LotStepper extends ConsumerWidget {
-  const _LotStepper({required this.lotId});
-
-  final String lotId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final stepsAsync = ref.watch(lotStepsProvider(lotId));
-    return stepsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => const SizedBox.shrink(),
-      data: (state) => Column(
-        children: [
-          for (int i = 0; i < state.steps.length; i++)
-            _StepTile(
-              step:   state.steps[i],
-              isLast: i == state.steps.length - 1,
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StepTile extends StatelessWidget {
-  const _StepTile({required this.step, required this.isLast});
-
-  final LotStep step;
-  final bool    isLast;
-
-  @override
-  Widget build(BuildContext context) {
-    final isNext = step.status == StepStatus.next;
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Timeline column
-          SizedBox(
-            width: 36,
-            child: Column(
-              children: [
-                _StepCircle(status: step.status),
-                if (!isLast)
-                  Expanded(
-                    child: Center(
-                      child: Container(
-                        width: 2,
-                        color: step.status == StepStatus.done
-                            ? AppColors.success.withValues(alpha: 0.5)
-                            : AppColors.outlineVariant,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Step card
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
-              child: InkWell(
-                onTap: () => context.go(step.route),
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: isNext
-                        ? AppColors.aiBlue.withValues(alpha: 0.05)
-                        : Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isNext
-                          ? AppColors.aiBlue.withValues(alpha: 0.35)
-                          : AppColors.outlineVariant,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(step.label,
-                                    style: AppTextStyles.labelMedium.copyWith(
-                                      color: step.status == StepStatus.pending
-                                          ? AppColors.onSurfaceVariant
-                                          : AppColors.onSurface,
-                                    )),
-                                if (isNext) ...[
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 7, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.aiBlue,
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: Text(
-                                      'Siguiente',
-                                      style: AppTextStyles.labelSmall.copyWith(
-                                        color: Colors.white,
-                                        fontSize: 10,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              _subtitle(),
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: AppColors.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        size: 20,
-                        color: step.status == StepStatus.pending
-                            ? AppColors.outlineVariant
-                            : AppColors.onSurfaceVariant,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _subtitle() => switch (step.status) {
-    StepStatus.done    => 'Completado',
-    StepStatus.active  => 'En progreso',
-    StepStatus.next    => 'Acción recomendada',
-    StepStatus.pending => 'Pendiente',
-  };
-}
-
-class _StepCircle extends StatelessWidget {
-  const _StepCircle({required this.status});
-
-  final StepStatus status;
-
-  @override
-  Widget build(BuildContext context) => switch (status) {
-    StepStatus.done => Container(
-      width: 28, height: 28,
-      decoration: const BoxDecoration(
-        color: AppColors.success, shape: BoxShape.circle,
-      ),
-      child: const Icon(Icons.check_rounded, size: 16, color: Colors.white),
-    ),
-    StepStatus.active => Container(
-      width: 28, height: 28,
-      decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.12),
-        shape: BoxShape.circle,
-        border: Border.all(color: AppColors.warning, width: 2),
-      ),
-      child: Center(
-        child: Container(
-          width: 10, height: 10,
-          decoration: const BoxDecoration(
-            color: AppColors.warning, shape: BoxShape.circle,
-          ),
-        ),
-      ),
-    ),
-    StepStatus.next => Container(
-      width: 28, height: 28,
-      decoration: BoxDecoration(
-        color: AppColors.aiBlue.withValues(alpha: 0.1),
-        shape: BoxShape.circle,
-        border: Border.all(color: AppColors.aiBlue, width: 2),
-      ),
-      child: const Icon(Icons.arrow_forward_rounded,
-          size: 14, color: AppColors.aiBlue),
-    ),
-    StepStatus.pending => Container(
-      width: 28, height: 28,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        border: Border.all(color: AppColors.outlineVariant, width: 2),
-      ),
-    ),
-  };
 }
 
 // ── Batch Insights Card ───────────────────────────────────────────────────────

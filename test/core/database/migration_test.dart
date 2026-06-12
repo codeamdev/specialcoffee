@@ -75,9 +75,9 @@ void main() {
     expect(cols, contains('synced_at'));
   });
 
-  test('final schema version is 22', () async {
+  test('final schema version is 23', () async {
     final row = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(row.read<int>('user_version'), 22);
+    expect(row.read<int>('user_version'), 23);
   });
 
   test('local_lots retains v13 columns after migration', () async {

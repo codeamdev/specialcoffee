@@ -12,6 +12,8 @@ import 'package:special_coffee/presentation/screens/coffee_master/coffee_master_
 import 'package:special_coffee/presentation/screens/brand_manager/brand_manager_screen.dart';
 import 'package:special_coffee/presentation/screens/brewing/brew_diagnosis_screen.dart';
 import 'package:special_coffee/presentation/screens/brewing/brew_recipe_screen.dart';
+import 'package:special_coffee/domain/entities/coffee_reference.dart';
+import 'package:special_coffee/domain/entities/lot.dart';
 import 'package:special_coffee/presentation/screens/brewing/brew_screen.dart';
 import 'package:special_coffee/presentation/screens/dashboard/dashboard_screen.dart';
 import 'package:special_coffee/presentation/screens/drying/drying_screen.dart';
@@ -188,6 +190,12 @@ GoRouter appRouter(Ref ref) {
                       lotId: state.pathParameters['id']!,
                     ),
                   ),
+                  GoRoute(
+                    path: 'edit',
+                    builder: (context, state) => LotCreateScreen(
+                      existing: state.extra as Lot?,
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -208,7 +216,9 @@ GoRouter appRouter(Ref ref) {
           GoRoute(
             path: AppRoutes.brew,
             pageBuilder: (context, state) => _noTransitionPage(
-              const BrewScreen(),
+              BrewScreen(
+                initialReference: (state.extra as Map<String, dynamic>?)?['reference'] as CoffeeReference?,
+              ),
               state,
             ),
             routes: [

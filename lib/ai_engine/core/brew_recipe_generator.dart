@@ -103,18 +103,16 @@ class BrewRecipeGenerator {
       }
     }
 
-    // ── Ajuste 5: Preferencias del usuario → ratio ────────────────────────────
-    if (context.userSweetnessWeight > 0.7) {
-      ratio -= 0.5;
+    // ── Ajuste 5: Preferencias del usuario → ratio (mapping continuo) ─────────
+    // delta va de -1.0 (máx dulzor/concentrado) a +1.0 (máx acidez/diluido).
+    // Neutral (0.5) produce delta = 0 — no hay cambio.
+    final tasteDelta = (context.userAcidityWeight - context.userSweetnessWeight);
+    if (tasteDelta.abs() > 0.05) {
+      ratio = (ratio + tasteDelta).clamp(1.0, 25.0);
+      final dir = tasteDelta > 0 ? 'diluido' : 'concentrado';
       adjustments.add(
-        'Ratio más concentrado (1:${ratio.toStringAsFixed(1)}) — '
-        'preferencia de dulzor del usuario',
-      );
-    } else if (context.userAcidityWeight > 0.7) {
-      ratio += 0.5;
-      adjustments.add(
-        'Ratio más diluido (1:${ratio.toStringAsFixed(1)}) — '
-        'preferencia de acidez brillante',
+        'Ratio ${dir} → 1:${ratio.toStringAsFixed(1)} '
+        '(perfil gustativo: ${tasteDelta > 0 ? 'acidez' : 'dulzor'})',
       );
     }
 

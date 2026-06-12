@@ -116,7 +116,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 22;
+  int get schemaVersion => 23;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -253,6 +253,16 @@ class AppDatabase extends _$AppDatabase {
             try {
               await m.database.customStatement(
                 'ALTER TABLE coffee_references ADD COLUMN farmer TEXT',
+              );
+            } catch (_) {
+              // Column already exists — idempotent
+            }
+          }
+          // v23: process_type field on coffee_references
+          if (from < 23) {
+            try {
+              await m.database.customStatement(
+                'ALTER TABLE coffee_references ADD COLUMN process_type TEXT',
               );
             } catch (_) {
               // Column already exists — idempotent

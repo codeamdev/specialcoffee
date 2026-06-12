@@ -254,7 +254,7 @@ void main() {
   // ── Ajuste 5: Preferencias → ratio ───────────────────────────────────────
 
   group('Ajuste 5 — User preferences adjust ratio', () {
-    test('userSweetnessWeight 0.8 → ratio -0.5', () {
+    test('userSweetnessWeight 0.8, acidityWeight 0.2 → ratio -0.6 (continuous delta)', () {
       final base = gen.generate(ctx(
         module: 'brewing', brewMethod: 'v60', altitudeMasl: 0,
         roastLevel: 'medium', roastDays: 20,
@@ -265,10 +265,11 @@ void main() {
         roastLevel: 'medium', roastDays: 20,
         userSweetnessWeight: 0.8, userAcidityWeight: 0.2,
       ));
-      expect(sweet.ratio, base.ratio - 0.5);
+      // tasteDelta = 0.2 - 0.8 = -0.6 → ratio shifts by -0.6
+      expect(sweet.ratio, closeTo(base.ratio - 0.6, 0.001));
     });
 
-    test('userAcidityWeight 0.8 → ratio +0.5', () {
+    test('userAcidityWeight 0.8, sweetnessWeight 0.2 → ratio +0.6 (continuous delta)', () {
       final base = gen.generate(ctx(
         module: 'brewing', brewMethod: 'v60', altitudeMasl: 0,
         roastLevel: 'medium', roastDays: 20,
@@ -279,7 +280,8 @@ void main() {
         roastLevel: 'medium', roastDays: 20,
         userSweetnessWeight: 0.2, userAcidityWeight: 0.8,
       ));
-      expect(acidic.ratio, base.ratio + 0.5);
+      // tasteDelta = 0.8 - 0.2 = +0.6 → ratio shifts by +0.6
+      expect(acidic.ratio, closeTo(base.ratio + 0.6, 0.001));
     });
 
     test('waterG = doseG × ratio', () {

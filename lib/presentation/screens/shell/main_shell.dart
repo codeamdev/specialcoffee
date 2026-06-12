@@ -23,7 +23,8 @@ const _tabProfile      = _Tab(Icons.person_outline,       Icons.person,      'Pe
 List<_Tab> _tabsFor(String role) => switch (role) {
   'barista'                              => [_tabBaristaHome, _tabBrew, _tabProfile],
   'brand_manager' || 'entrepreneur'      => [_tabHome, _tabLots, _tabBrew, _tabProfile],
-  'coffee_master' || 'producer_integral' => [_tabHome, _tabPases, _tabBrew, _tabProfile],
+  'coffee_master'      => [_tabHome, _tabPases, _tabBrew, _tabProfile],
+  'producer_integral'  => [_tabHome, _tabPases, _tabLots, _tabBrew, _tabProfile],
   _                                      => [_tabHome, _tabPases, _tabLots, _tabProfile], // producer + legacy
 };
 
