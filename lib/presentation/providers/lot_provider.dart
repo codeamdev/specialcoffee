@@ -23,14 +23,16 @@ LotRepository lotRepository(Ref ref) => ApiConfig.devBypass
 Future<List<Lot>> userLots(Ref ref) async {
   final userId = ref.watch(currentUserIdProvider);
   if (userId.isEmpty) return [];
-  return ref.read(lotRepositoryProvider).getLots(userId);
+  // Offline-first: lee siempre de SQLite local; el sync envía al servidor en background.
+  return ref.read(lotLocalRepoProvider).getLots(userId);
 }
 
 @riverpod
 Future<Lot?> lotById(Ref ref, String id) async {
   final userId = ref.watch(currentUserIdProvider);
   if (userId.isEmpty) return null;
-  return ref.read(lotRepositoryProvider).getLotById(id, userId);
+  // Offline-first: el lote recién creado vive en SQLite antes de llegar al servidor.
+  return ref.read(lotLocalRepoProvider).getLotById(id, userId);
 }
 
 @riverpod

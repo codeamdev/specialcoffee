@@ -83,9 +83,11 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
   bool _tdsPrefilledFromHistory = false;
 
   // Coffee reference (optional, shown as summary after saving)
-  String? _coffeeRefName;
-  String? _coffeeRefFarm;
-  String? _coffeeRefFarmer;
+  String?   _coffeeRefName;
+  String?   _coffeeRefFarm;
+  String?   _coffeeRefFarmer;
+  String    _coffeeRefRoastLevel = 'medium';
+  DateTime? _coffeeRefRoastDate;
 
   @override
   void dispose() {
@@ -192,7 +194,7 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
 
   Widget _buildMethodCards() {
     return SizedBox(
-      height: 136,
+      height: 155,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: _methods.length,
@@ -555,64 +557,170 @@ class _BrewScreenState extends ConsumerState<BrewScreen> {
     final farmCtrl   = TextEditingController(text: _coffeeRefFarm);
     final farmerCtrl = TextEditingController(text: _coffeeRefFarmer);
 
+    const roastLevels = [
+      ('light',  'Claro'),
+      ('medium', 'Medio'),
+      ('dark',   'Oscuro'),
+    ];
+
+    String   localRoast = _coffeeRefRoastLevel;
+    DateTime? localDate = _coffeeRefRoastDate;
+
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModal) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
           ),
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 36, height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.outlineVariant,
-                    borderRadius: BorderRadius.circular(2),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36, height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.outlineVariant,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text('Referencia de café', style: AppTextStyles.displaySmall.copyWith(fontSize: 18)),
-              const SizedBox(height: 4),
-              Text('Datos del café que vas a preparar.', style: AppTextStyles.bodySmall),
-              const SizedBox(height: 20),
-              _ModalField(nameCtrl,   'Nombre del café', Icons.local_cafe_outlined),
-              const SizedBox(height: 12),
-              _ModalField(farmCtrl,   'Finca',           Icons.landscape_outlined),
-              const SizedBox(height: 12),
-              _ModalField(farmerCtrl, 'Caficultor',      Icons.person_outline),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () {
-                    setState(() {
-                      _coffeeRefName   = nameCtrl.text.trim().isEmpty   ? null : nameCtrl.text.trim();
-                      _coffeeRefFarm   = farmCtrl.text.trim().isEmpty   ? null : farmCtrl.text.trim();
-                      _coffeeRefFarmer = farmerCtrl.text.trim().isEmpty ? null : farmerCtrl.text.trim();
-                    });
-                    Navigator.of(context).pop();
-                  },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.caramel,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  const SizedBox(height: 16),
+                  Text('Referencia de café',
+                      style: AppTextStyles.displaySmall.copyWith(fontSize: 18)),
+                  const SizedBox(height: 4),
+                  const Text('Datos del café que vas a preparar.',
+                      style: AppTextStyles.bodySmall),
+                  const SizedBox(height: 20),
+                  _ModalField(nameCtrl,   'Nombre del café', Icons.local_cafe_outlined),
+                  const SizedBox(height: 12),
+                  _ModalField(farmCtrl,   'Finca / Origen',  Icons.landscape_outlined),
+                  const SizedBox(height: 12),
+                  _ModalField(farmerCtrl, 'Caficultor',      Icons.person_outline),
+                  const SizedBox(height: 16),
+                  Text('Nivel de tueste',
+                      style: AppTextStyles.labelMedium
+                          .copyWith(color: AppColors.onSurfaceVariant)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: roastLevels.map((r) {
+                      final selected = localRoast == r.$1;
+                      return Expanded(
+                        child: GestureDetector(
+                          onTap: () => setModal(() => localRoast = r.$1),
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              decoration: BoxDecoration(
+                                color: selected
+                                    ? AppColors.caramel.withValues(alpha: 0.1)
+                                    : Colors.white,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: selected
+                                      ? AppColors.caramel
+                                      : AppColors.outlineVariant,
+                                  width: selected ? 1.5 : 1.0,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(r.$2,
+                                    style: AppTextStyles.labelSmall.copyWith(
+                                      color: selected
+                                          ? AppColors.caramel
+                                          : AppColors.onSurface,
+                                      fontWeight: selected
+                                          ? FontWeight.w600
+                                          : FontWeight.normal,
+                                    )),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
                   ),
-                  child: Text('Guardar referencia', style: AppTextStyles.buttonMedium.copyWith(color: Colors.white)),
-                ),
+                  const SizedBox(height: 16),
+                  Text('Fecha de tostión',
+                      style: AppTextStyles.labelMedium
+                          .copyWith(color: AppColors.onSurfaceVariant)),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: ctx,
+                        initialDate: localDate ?? DateTime.now(),
+                        firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                        lastDate: DateTime.now(),
+                      );
+                      if (picked != null) setModal(() => localDate = picked);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.outlineVariant),
+                      ),
+                      child: Row(children: [
+                        const Icon(Icons.calendar_today_outlined,
+                            size: 18, color: AppColors.caramel),
+                        const SizedBox(width: 10),
+                        Text(
+                          localDate != null
+                              ? '${localDate!.day}/${localDate!.month}/${localDate!.year}'
+                              : 'Seleccionar fecha',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: localDate != null
+                                ? AppColors.onSurface
+                                : AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ]),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () {
+                        setState(() {
+                          _coffeeRefName       = nameCtrl.text.trim().isEmpty   ? null : nameCtrl.text.trim();
+                          _coffeeRefFarm       = farmCtrl.text.trim().isEmpty   ? null : farmCtrl.text.trim();
+                          _coffeeRefFarmer     = farmerCtrl.text.trim().isEmpty ? null : farmerCtrl.text.trim();
+                          _coffeeRefRoastLevel = localRoast;
+                          _coffeeRefRoastDate  = localDate;
+                        });
+                        Navigator.of(ctx).pop();
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.caramel,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: Text('Guardar referencia',
+                          style: AppTextStyles.buttonMedium
+                              .copyWith(color: Colors.white)),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

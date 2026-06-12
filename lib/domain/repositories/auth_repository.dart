@@ -20,6 +20,10 @@ abstract class AuthRepository {
 
   Future<void> logout();
 
+  Future<void> registerDevice(String playerId);
+
+  Future<void> registerFcmToken(String token);
+
   bool get isLoggedIn;
 }
 

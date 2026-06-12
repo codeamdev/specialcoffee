@@ -163,67 +163,70 @@ class _LotCreateScreenState extends ConsumerState<LotCreateScreen> {
       icon:  Icons.agriculture_outlined,
       children: [
         TextFormField(
-          controller:  _plantAgeCtrl,
-          enabled: false,
-          decoration:  _decor('Años del café'),
+          controller:   _plantAgeCtrl,
+          decoration:   _decor('Años del café'),
           keyboardType: TextInputType.number,
           style: AppTextStyles.numericSmall.copyWith(color: AppColors.onSurface),
+          validator: (v) {
+            if (v == null || v.trim().isEmpty) return null;
+            final n = int.tryParse(v.trim());
+            if (n == null || n < 1 || n > 100) return '1–100';
+            return null;
+          },
         ),
         const SizedBox(height: 14),
         Text('Tipo de plantación',
             style: AppTextStyles.labelMedium
                 .copyWith(color: AppColors.onSurfaceVariant)),
         const SizedBox(height: 8),
-        IgnorePointer(
-          child: Opacity(
-            opacity: 0.45,
-            child: Row(
-              children: tipos.map((t) {
-                final (key, label, icon) = t;
-                final selected = _plantType == key;
-                return Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      decoration: BoxDecoration(
+        Row(
+          children: tipos.map((t) {
+            final (key, label, icon) = t;
+            final selected = _plantType == key;
+            return Expanded(
+              child: GestureDetector(
+                onTap: () => setState(() => _plantType = key),
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? AppColors.caramel.withValues(alpha: 0.1)
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
                         color: selected
-                            ? AppColors.caramel.withValues(alpha: 0.1)
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: selected
-                              ? AppColors.caramel
-                              : AppColors.outlineVariant,
-                          width: selected ? 1.5 : 1.0,
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          Icon(icon,
-                              size:  18,
-                              color: selected
-                                  ? AppColors.caramel
-                                  : AppColors.onSurfaceVariant),
-                          const SizedBox(height: 4),
-                          Text(label,
-                              style: AppTextStyles.labelSmall.copyWith(
-                                color: selected
-                                    ? AppColors.caramel
-                                    : AppColors.onSurface,
-                                fontWeight: selected
-                                    ? FontWeight.w600
-                                    : FontWeight.normal,
-                              )),
-                        ],
+                            ? AppColors.caramel
+                            : AppColors.outlineVariant,
+                        width: selected ? 1.5 : 1.0,
                       ),
                     ),
+                    child: Column(
+                      children: [
+                        Icon(icon,
+                            size:  18,
+                            color: selected
+                                ? AppColors.caramel
+                                : AppColors.onSurfaceVariant),
+                        const SizedBox(height: 4),
+                        Text(label,
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: selected
+                                  ? AppColors.caramel
+                                  : AppColors.onSurface,
+                              fontWeight: selected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                            )),
+                      ],
+                    ),
                   ),
-                );
-              }).toList(),
-            ),
-          ),
+                ),
+              ),
+            );
+          }).toList(),
         ),
       ],
     );
@@ -263,10 +266,15 @@ class _LotCreateScreenState extends ConsumerState<LotCreateScreen> {
         const SizedBox(height: 12),
         TextFormField(
           controller: _farmAreaCtrl,
-          enabled: false,
           decoration: _decor('Área de finca (ha)'),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           style: AppTextStyles.numericSmall.copyWith(color: AppColors.onSurface),
+          validator: (v) {
+            if (v == null || v.trim().isEmpty) return null;
+            final n = double.tryParse(v.trim());
+            if (n == null || n <= 0 || n > 10000) return '0–10000 ha';
+            return null;
+          },
         ),
       ],
     );

@@ -53,7 +53,7 @@ void main() {
       expect(find.byIcon(Icons.sync_disabled_outlined), findsNothing);
     });
 
-    testWidgets('latitude, longitude, farm area and plant age fields are disabled',
+    testWidgets('only latitude and longitude are disabled (GPS-read-only)',
         (tester) async {
       await tester.pumpWidget(_buildScreen());
       await tester.pumpAndSettle();
@@ -63,23 +63,20 @@ void main() {
           .where((f) => f.enabled == false)
           .length;
 
-      // lat + lng + farmArea + plantAge = 4 disabled text fields
-      expect(disabled, 4);
+      // lat + lng = 2 disabled text fields (GPS-populated, read-only)
+      expect(disabled, 2);
     });
 
-    testWidgets('plant type selector is wrapped in IgnorePointer', (tester) async {
+    testWidgets('plant type selector has GestureDetector (interactive)', (tester) async {
       await tester.pumpWidget(_buildScreen());
       await tester.pumpAndSettle();
 
-      final ignorePointers = tester
-          .widgetList<IgnorePointer>(find.byType(IgnorePointer))
-          .where((w) => w.ignoring)
-          .toList();
-
-      expect(ignorePointers, isNotEmpty);
+      // The plant type chips are each wrapped in GestureDetector
+      expect(find.byType(GestureDetector), findsWidgets);
     });
 
-    testWidgets('altitude and region fields remain enabled', (tester) async {
+    testWidgets('farm area, plant age, altitude and region fields are enabled',
+        (tester) async {
       await tester.pumpWidget(_buildScreen());
       await tester.pumpAndSettle();
 
@@ -88,8 +85,8 @@ void main() {
           .where((f) => f.enabled != false)
           .length;
 
-      // altitude + region = 2 enabled text fields (notes also enabled = 3)
-      expect(enabled, greaterThanOrEqualTo(2));
+      // farmArea + plantAge + altitude + region + notes ≥ 4
+      expect(enabled, greaterThanOrEqualTo(4));
     });
   });
 }
