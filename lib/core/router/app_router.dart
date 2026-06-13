@@ -33,6 +33,7 @@ import 'package:special_coffee/presentation/screens/pase/pases_list_screen.dart'
 import 'package:special_coffee/presentation/screens/admin/admin_screen.dart';
 import 'package:special_coffee/presentation/screens/profile/glossary_screen.dart';
 import 'package:special_coffee/presentation/screens/profile/profile_screen.dart';
+import 'package:special_coffee/presentation/screens/water_profiles/water_profiles_screen.dart';
 import 'package:special_coffee/presentation/screens/shell/main_shell.dart';
 import 'package:special_coffee/presentation/providers/auth_provider.dart';
 
@@ -274,6 +275,10 @@ GoRouter appRouter(Ref ref) {
           GoRoute(
             path: AppRoutes.brandManager,
             builder: (context, state) => const BrandManagerScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.waterProfiles,
+            builder: (context, state) => const WaterProfilesScreen(),
           ),
         ],
       ),

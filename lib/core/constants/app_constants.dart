@@ -82,5 +82,6 @@ abstract final class AppRoutes {
   static const String glossary = '/glossary';
   static const String settings = '/settings';
   static const String admin = '/admin';
-  static const String brandManager = '/brand-manager';
+  static const String brandManager  = '/brand-manager';
+  static const String waterProfiles = '/water-profiles';
 }

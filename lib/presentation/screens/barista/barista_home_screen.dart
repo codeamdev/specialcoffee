@@ -25,6 +25,11 @@ class BaristaHomeScreen extends ConsumerWidget {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.water_drop_outlined),
+            tooltip: 'Perfiles de agua',
+            onPressed: () => context.push(AppRoutes.waterProfiles),
+          ),
+          IconButton(
             icon: const Icon(Icons.coffee),
             tooltip: 'Nueva preparación',
             onPressed: () => context.push(AppRoutes.baristaWizard),

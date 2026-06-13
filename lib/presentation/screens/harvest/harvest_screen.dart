@@ -684,6 +684,13 @@ class _PassTile extends StatelessWidget {
                     ],
                   ],
                 ),
+                if (pass.hasRipenessData &&
+                    (pass.ripenessGreenPct != null ||
+                        pass.ripenessOverripePct != null ||
+                        pass.ripenesDryPct != null)) ...[
+                  const SizedBox(height: 8),
+                  _RipenessBar(pass: pass),
+                ],
               ],
             ),
           ),
@@ -698,6 +705,71 @@ class _PassTile extends StatelessWidget {
 
   String _fmtDate(DateTime d) =>
       '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}';
+}
+
+// Stacked color bar: ripe (green) · overripe (orange) · dry (brown) · green (light green)
+class _RipenessBar extends StatelessWidget {
+  const _RipenessBar({required this.pass});
+
+  final HarvestPass pass;
+
+  @override
+  Widget build(BuildContext context) {
+    final ripe     = pass.ripenessRipePct     ?? 0.0;
+    final green    = pass.ripenessGreenPct    ?? 0.0;
+    final overripe = pass.ripenessOverripePct ?? 0.0;
+    final dry      = pass.ripenesDryPct       ?? 0.0;
+    final total    = ripe + green + overripe + dry;
+    if (total <= 0) return const SizedBox.shrink();
+
+    final segments = [
+      (ripe,     const Color(0xFF4CAF50), 'Maduras'),
+      (overripe, const Color(0xFFFF9800), 'Sobre-mad.'),
+      (dry,      const Color(0xFF8D6E63), 'Secas'),
+      (green,    const Color(0xFF8BC34A), 'Verdes'),
+    ].where((s) => s.$1 > 0).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: SizedBox(
+            height: 6,
+            child: Row(
+              children: segments
+                  .map((s) => Flexible(
+                        flex: (s.$1 * 100).round(),
+                        child: Container(color: s.$2),
+                      ))
+                  .toList(),
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Wrap(
+          spacing: 10,
+          children: segments
+              .map((s) => Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                          width: 7, height: 7,
+                          decoration: BoxDecoration(
+                              color: s.$2, shape: BoxShape.circle)),
+                      const SizedBox(width: 3),
+                      Text(
+                        '${s.$3} ${s.$1.toStringAsFixed(0)}%',
+                        style: AppTextStyles.bodySmall
+                            .copyWith(fontSize: 10),
+                      ),
+                    ],
+                  ))
+              .toList(),
+        ),
+      ],
+    );
+  }
 }
 
 class _UnclassifiedChip extends StatelessWidget {
