@@ -462,16 +462,74 @@ class _CuppingEvaluationCard extends StatelessWidget {
           Wrap(spacing: 8, runSpacing: 4, children: [
             if (item.acidity != null)
               Chip(label: Text('Acidez ${item.acidity!.toStringAsFixed(1)}')),
+            if (item.acidityIntensity != null)
+              Chip(label: Text('Int.ácido ${item.acidityIntensity!.toStringAsFixed(1)}')),
             if (item.body != null)
               Chip(label: Text('Cuerpo ${item.body!.toStringAsFixed(1)}')),
+            if (item.bodyTexture != null)
+              Chip(label: Text('Textura ${item.bodyTexture!.toStringAsFixed(1)}')),
             if (item.balance != null)
               Chip(label: Text('Balance ${item.balance!.toStringAsFixed(1)}')),
             if (item.overall != null)
               Chip(label: Text('Overall ${item.overall!.toStringAsFixed(1)}')),
           ]),
+          if (item.flavorDescriptors != null &&
+              item.flavorDescriptors!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text('Descriptores:',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: Colors.grey[600])),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: _parseDescriptors(item.flavorDescriptors!)
+                  .map((d) => Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.brown.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.brown.shade200),
+                        ),
+                        child: Text(d,
+                            style: TextStyle(
+                                fontSize: 11, color: Colors.brown.shade700)),
+                      ))
+                  .toList(),
+            ),
+          ],
+          if (item.notes != null && item.notes!.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(item.notes!,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: Colors.grey[600])),
+          ],
         ]),
       ),
     );
+  }
+
+  List<String> _parseDescriptors(String raw) {
+    try {
+      final decoded = (raw.startsWith('['))
+          ? (raw
+              .replaceAll('[', '')
+              .replaceAll(']', '')
+              .replaceAll('"', '')
+              .split(',')
+              .map((s) => s.trim())
+              .where((s) => s.isNotEmpty)
+              .toList())
+          : raw.split(',').map((s) => s.trim()).toList();
+      return decoded;
+    } catch (_) {
+      return [raw];
+    }
   }
 
   Color _scoreColor(double score) {
@@ -495,17 +553,30 @@ class _CuppingEvaluationForm extends ConsumerStatefulWidget {
       _CuppingEvaluationFormState();
 }
 
+// SCA Flavor Wheel descriptors (simplified for on-device use)
+const _scaDescriptors = [
+  'Floral', 'Jazmín', 'Rosa', 'Frutal', 'Cítrico', 'Limón', 'Naranja',
+  'Manzana', 'Durazno', 'Cereza', 'Frutos rojos', 'Fruta tropical',
+  'Mango', 'Maracuyá', 'Panela', 'Caramelo', 'Chocolate', 'Nuez',
+  'Avellana', 'Almendra', 'Vainilla', 'Miel', 'Canela', 'Especias',
+  'Herbal', 'Tabaco', 'Tostado', 'Ahumado', 'Cedro', 'Terroso',
+];
+
 class _CuppingEvaluationFormState extends ConsumerState<_CuppingEvaluationForm> {
-  final _fragrance  = TextEditingController();
-  final _flavor     = TextEditingController();
-  final _aftertaste = TextEditingController();
-  final _acidity    = TextEditingController();
-  final _body       = TextEditingController();
-  final _balance    = TextEditingController();
-  final _uniformity = TextEditingController();
-  final _cleanCup   = TextEditingController();
-  final _sweetness  = TextEditingController();
-  final _overall    = TextEditingController();
+  final _fragrance       = TextEditingController();
+  final _flavor          = TextEditingController();
+  final _aftertaste      = TextEditingController();
+  final _acidity         = TextEditingController();
+  final _acidityIntensity = TextEditingController();
+  final _body            = TextEditingController();
+  final _bodyTexture     = TextEditingController();
+  final _balance         = TextEditingController();
+  final _uniformity      = TextEditingController();
+  final _cleanCup        = TextEditingController();
+  final _sweetness       = TextEditingController();
+  final _overall         = TextEditingController();
+  final _notes           = TextEditingController();
+  final Set<String> _selectedDescriptors = {};
   bool _saving = false;
 
   @override
@@ -523,16 +594,56 @@ class _CuppingEvaluationFormState extends ConsumerState<_CuppingEvaluationForm> 
           Text('Escala 6–10 pts por atributo',
               style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 16),
-          _field(_fragrance,  'Fragancia/Aroma'),
-          _field(_flavor,     'Sabor'),
-          _field(_aftertaste, 'Postgusto'),
-          _field(_acidity,    'Acidez'),
-          _field(_body,       'Cuerpo'),
+          _field(_fragrance,       'Fragancia/Aroma'),
+          _field(_flavor,          'Sabor'),
+          _field(_aftertaste,      'Postgusto'),
+          Row(children: [
+            Expanded(child: _field(_acidity,          'Acidez')),
+            const SizedBox(width: 10),
+            Expanded(child: _field(_acidityIntensity, 'Int. acidez')),
+          ]),
+          Row(children: [
+            Expanded(child: _field(_body,         'Cuerpo')),
+            const SizedBox(width: 10),
+            Expanded(child: _field(_bodyTexture,  'Textura')),
+          ]),
           _field(_balance,    'Balance'),
           _field(_uniformity, 'Uniformidad'),
           _field(_cleanCup,   'Taza limpia'),
           _field(_sweetness,  'Dulzura'),
           _field(_overall,    'Overall'),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text('Descriptores de sabor (SCA Flavor Wheel)',
+                style: Theme.of(context).textTheme.bodySmall),
+          ),
+          const SizedBox(height: 6),
+          StatefulBuilder(builder: (ctx, setS) => Wrap(
+            spacing: 6, runSpacing: 6,
+            children: _scaDescriptors.map((d) {
+              final selected = _selectedDescriptors.contains(d);
+              return FilterChip(
+                label: Text(d, style: const TextStyle(fontSize: 12)),
+                selected: selected,
+                onSelected: (v) => setState(() {
+                  if (v) { _selectedDescriptors.add(d); }
+                  else   { _selectedDescriptors.remove(d); }
+                }),
+                selectedColor: Colors.brown.shade100,
+                checkmarkColor: Colors.brown.shade700,
+              );
+            }).toList(),
+          )),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _notes,
+            maxLines: 2,
+            decoration: const InputDecoration(
+              labelText: 'Notas del cupper',
+              border: OutlineInputBorder(),
+            ),
+          ),
           const SizedBox(height: 16),
           FilledButton(
             onPressed: _saving ? null : _save,
@@ -565,7 +676,9 @@ class _CuppingEvaluationFormState extends ConsumerState<_CuppingEvaluationForm> 
     final flav = _parse(_flavor);
     final aft  = _parse(_aftertaste);
     final acid = _parse(_acidity);
+    final acidI = _parse(_acidityIntensity);
     final bod  = _parse(_body);
+    final bodT = _parse(_bodyTexture);
     final bal  = _parse(_balance);
     final uni  = _parse(_uniformity);
     final cln  = _parse(_cleanCup);
@@ -577,22 +690,30 @@ class _CuppingEvaluationFormState extends ConsumerState<_CuppingEvaluationForm> 
         .toList();
     final total = attrs.isNotEmpty ? attrs.reduce((a, b) => a + b) + 36 : null;
 
+    final descriptors = _selectedDescriptors.isNotEmpty
+        ? _selectedDescriptors.join(', ')
+        : null;
+
     await ref.read(cuppingEvaluationLocalRepoProvider).save(CuppingEvaluation(
-      id:            '',
-      lotId:         widget.lotId,
-      cupperId:      userId,
-      cuppedAt:      DateTime.now(),
-      fragranceAroma: frag,
-      flavor:         flav,
-      aftertaste:     aft,
-      acidity:        acid,
-      body:           bod,
-      balance:        bal,
-      uniformity:     uni,
-      cleanCup:       cln,
-      sweetness:      swt,
-      overall:        ovr,
-      totalScore:     total,
+      id:              '',
+      lotId:           widget.lotId,
+      cupperId:        userId,
+      cuppedAt:        DateTime.now(),
+      fragranceAroma:  frag,
+      flavor:          flav,
+      aftertaste:      aft,
+      acidity:         acid,
+      acidityIntensity: acidI,
+      body:            bod,
+      bodyTexture:     bodT,
+      balance:         bal,
+      uniformity:      uni,
+      cleanCup:        cln,
+      sweetness:       swt,
+      overall:         ovr,
+      totalScore:      total,
+      flavorDescriptors: descriptors,
+      notes:           _notes.text.trim().isEmpty ? null : _notes.text.trim(),
     ));
     if (mounted) Navigator.of(context).pop();
   }
@@ -600,9 +721,11 @@ class _CuppingEvaluationFormState extends ConsumerState<_CuppingEvaluationForm> 
   @override
   void dispose() {
     _fragrance.dispose(); _flavor.dispose(); _aftertaste.dispose();
-    _acidity.dispose(); _body.dispose(); _balance.dispose();
-    _uniformity.dispose(); _cleanCup.dispose(); _sweetness.dispose();
-    _overall.dispose();
+    _acidity.dispose(); _acidityIntensity.dispose();
+    _body.dispose(); _bodyTexture.dispose();
+    _balance.dispose(); _uniformity.dispose();
+    _cleanCup.dispose(); _sweetness.dispose();
+    _overall.dispose(); _notes.dispose();
     super.dispose();
   }
 }
