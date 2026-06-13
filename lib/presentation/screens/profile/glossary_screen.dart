@@ -233,6 +233,171 @@ const _topics = [
         'varias veces).\n\n'
         'Fuente: SCA Brewing Standards 2019; BH Education; Scott Rao.',
   ),
+  _Topic(
+    title: 'Variedades de café: especie y sensibilidad',
+    icon: Icons.eco_outlined,
+    tags: ['variedad', 'especie', 'arabica', 'robusta', 'geisha', 'castillo', 'caturra', 'colombia', 'sensibilidad'],
+    content:
+        'Todas las variedades de especialidad colombiana pertenecen a Coffea arabica. '
+        'Las principales y sus características:\n\n'
+        '• Geisha/Gesha: sensibilidad muy alta. SCA potencial 88–92 pts. Proceso '
+        'recomendado: lavado o anaeróbico láctico. Altitud óptima 1700–2200 m.s.n.m. '
+        'Perfiles: jazmín, bergamota, durazno, té negro (WCR/SCA).\n\n'
+        '• Pink Bourbon: sensibilidad muy alta. SCA potencial 86–90 pts. Proceso '
+        'recomendado: honey o anaeróbico. Altitud 1600–2000 m.s.n.m. '
+        'Perfiles: frutos rojos, rosas, panela (práctica Huila/Nariño).\n\n'
+        '• Typica: sensibilidad alta. SCA 85–88 pts. Lavado. 1400–2000 m.s.n.m. '
+        'Perfiles: caramelo, chocolate, fruta suave.\n\n'
+        '• Borbón: sensibilidad alta. SCA 84–87 pts. Lavado o natural. 1200–1800 m.s.n.m. '
+        'Perfiles: caramelo, avellana, cereza.\n\n'
+        '• Caturra: sensibilidad alta. SCA 83–86 pts. Lavado. 1200–1900 m.s.n.m. '
+        'Perfiles: cítrico, limón, panela (Cenicafé AT 335).\n\n'
+        '• Castillo: sensibilidad media. SCA 82–85 pts. Lavado. 1000–2000 m.s.n.m. '
+        'Perfiles: caramelo, chocolate, fruta roja leve. Resistente a la roya '
+        '(Hemileia vastatrix) — variedad emblema FNC (Cenicafé, 2005).\n\n'
+        '• Colombia: sensibilidad media. SCA 81–84 pts. Lavado. 1200–1800 m.s.n.m. '
+        'Perfiles: caramelo, chocolate amargo. Resistente a roya y CBD '
+        '(Cenicafé/FNC).\n\n'
+        '• Tabi: sensibilidad alta. SCA 84–87 pts. Lavado. 1500–2000 m.s.n.m. '
+        'Perfiles: floral, fruta tropical, chocolate (Cenicafé, 2002).\n\n'
+        'Fuente: WCR Variety Catalog 2022; Cenicafé AT 335, 420, 457; FNC Colombia.',
+  ),
+  _Topic(
+    title: 'Altitud y calidad del café',
+    icon: Icons.terrain_outlined,
+    tags: ['altitud', 'msnm', 'calidad', 'temperatura', 'maduración', 'acidez'],
+    content:
+        'La altitud es el principal determinante de la densidad y complejidad '
+        'aromática del café arábica colombiano.\n\n'
+        '• < 1000 m.s.n.m.: ciclo de maduración rápido (< 6 meses). Café con '
+        'cuerpo alto pero acidez y complejidad bajas. Dificultad para alcanzar '
+        'puntajes > 83 SCA (FNC).\n\n'
+        '• 1000–1500 m.s.n.m.: zona media. Cafés equilibrados, acidez media, '
+        'potencial 82–85 SCA. Variedades recomendadas: Castillo, Colombia, Caturra.\n\n'
+        '• 1500–1900 m.s.n.m.: zona óptima colombiana. Ciclo de maduración '
+        '8–10 meses. Mayor concentración de azúcares y ácidos orgánicos. '
+        'Potencial 84–88 SCA. Variedades: Caturra, Borbón, Castillo, Tabi.\n\n'
+        '• 1900–2200 m.s.n.m.: zona de alta montaña. Ciclo > 10 meses. Acidez '
+        'brillante, cuerpo sedoso, alta complejidad aromática. Potencial 86–92 SCA. '
+        'Variedades: Geisha, Pink Bourbon, Typica, Tabi.\n\n'
+        'Cada 300 m de ascenso: temperatura media baja ~2 °C, maduración '
+        '~1 mes más lenta, mayor acumulación de ácido clorogénico y sacarosa.\n\n'
+        'Fuente: Cenicafé Avances Técnicos 420 (2012); FNC Atlas del Café Colombia.',
+  ),
+  _Topic(
+    title: 'Proceso de beneficio y perfiles de sabor',
+    icon: Icons.science_outlined,
+    tags: ['proceso', 'lavado', 'natural', 'honey', 'anaeróbico', 'perfil', 'sabor'],
+    content:
+        'El método de beneficio modifica radicalmente el perfil sensorial del café '
+        'con la misma variedad y altitud.\n\n'
+        '• LAVADO (washed): mucílago removido por fermentación + lavado. '
+        'Perfil: limpio, transparente, acidez brillante y definida, permite '
+        'expresar el terroir y la variedad. Alta repetibilidad. '
+        'Rango fermentación: 16–36 h (Colombia, Cenicafé).\n\n'
+        '• NATURAL (dry): cereza entera se seca con pulpa y mucílago. '
+        'Perfil: cuerpo alto, vino, frutas tropicales fermentadas, dulzor '
+        'pronunciado. Mayor riesgo microbiológico. '
+        'Secado: 20–40 días en camas africanas (SCA).\n\n'
+        '• HONEY: despulpado pero con mucílago parcial o total retenido. '
+        'Yellow honey (< 25 % mucílago): perfil cercano al lavado con más dulzor. '
+        'Red honey (> 50 %): frutal, melado, complejo. '
+        'Black honey (> 75 %): similar al natural, muy dulce, vinoso.\n\n'
+        '• ANAERÓBICO LÁCTICO: fermentación en tanque sellado sin oxígeno. '
+        'pH objetivo 3.8–4.2. Perfil: láctico limpio, tropical intenso, '
+        'alta complejidad, dulzor de caña. '
+        'Temperatura < 20 °C para proceso controlado (WCR Fermentation 2020).\n\n'
+        'Fuente: SCA Processing Methods 2021; WCR Fermentation Research 2020; '
+        'Cenicafé Manual del Cafetero.',
+  ),
+  _Topic(
+    title: 'Análisis físico del café verde',
+    icon: Icons.inventory_2_outlined,
+    tags: ['análisis físico', 'defectos', 'densidad', 'humedad', 'actividad de agua', 'malla', 'q grader'],
+    content:
+        'El análisis físico del café verde (green grading) es obligatorio para '
+        'la clasificación como café de especialidad (SCA Defect Handbook, 2004).\n\n'
+        'DENSIDAD VERDE (g/cm³):\n'
+        '• > 0.75 g/cm³: alta densidad, grano compacto, altitude alto. '
+        'Extracción uniforme, mayor SCA potencial.\n'
+        '• 0.65–0.75 g/cm³: normal. < 0.65 g/cm³: grano vano o sobredesecado.\n'
+        'Medición: tubo graduado + agua destilada (método de desplazamiento).\n\n'
+        'HUMEDAD DEL GRANO (%):\n'
+        '• Estándar SCA/OIC: 10–12 %. < 10 %: sobredesecado (fragilidad). '
+        '> 12 %: riesgo de hongos durante almacenamiento.\n\n'
+        'ACTIVIDAD DE AGUA (Aw):\n'
+        '• Objetivo: Aw ≤ 0.65. Aw > 0.70: proliferación de hongos '
+        '(Aspergillus ochraceus → ocratoxina A). Medición: higrómetro de Aw.\n\n'
+        'DEFECTOS (SCA Green Defect Handbook, 2004):\n'
+        '• Categoría 1 (primarios, cada uno descalifica): negro completo, '
+        'negro parcial, agrio, brocado severo, daño fúngico, presencia de '
+        'material extraño grande.\n'
+        '• Categoría 2 (secundarios, máx 5 en 350 g): pergamino, flotante, '
+        'inmaduro, brocado leve, concha, defecto de color parcial.\n'
+        '• Para especialidad: 0 defectos Categoría 1 + ≤ 5 Categoría 2 en 350 g.\n\n'
+        'MALLA (tamiz mesh):\n'
+        '• Mesh 17–18: Supremo colombiano. Mesh 15–16: Excelso. '
+        '< Mesh 14: pasilla. Mayor malla = mejor uniformidad de extracción.\n\n'
+        'Fuente: SCA Green Coffee Defect Handbook (2004); OIC Resolution 420 (2009).',
+  ),
+  _Topic(
+    title: 'Características agronómicas del cultivo',
+    icon: Icons.agriculture_outlined,
+    tags: ['finca', 'área', 'plantación', 'edad', 'soca', 'reciembra', 'densidad de siembra'],
+    content:
+        'Los parámetros agronómicos del cafetal determinan el potencial productivo '
+        'y la calidad base del lote.\n\n'
+        'ÁREA DE LA FINCA (hectáreas):\n'
+        '• Colombia: finca cafetera promedio = 1.7 ha en café (FNC SICA, 2019).\n'
+        '• Densidad de siembra: 5.000–8.000 plantas/ha en Colombia.\n'
+        '• Rendimiento esperado: 1.5–2.5 t/ha/año de café pergamino seco '
+        '(Castillo en zona óptima, Cenicafé).\n\n'
+        'EDAD DE LAS PLANTAS (años):\n'
+        '• Años 2–4: plena producción, máxima densidad de ramas productivas.\n'
+        '• Años 4–7: producción estable, calidad óptima en altitudes altas.\n'
+        '• > 7 años: baja productividad, mayor incidencia de broca y roya. '
+        'Recomendación: renovación por zoca.\n\n'
+        'TIPO DE PLANTACIÓN:\n'
+        '• Nuevo: siembra nueva, máximo vigor vegetativo. '
+        'Primer cosecha a los 2–2.5 años.\n'
+        '• Reciembra: sustitución de plantas muertas o improductivas. '
+        'Mezcla de edades en el lote — mayor variabilidad de madurez.\n'
+        '• Soca (zoqueo): corte del tronco principal a 20–30 cm para '
+        'renovación. Producción reiniciada en 18–24 meses. Conserva '
+        'sistema radicular adulto — recuperación más rápida que siembra nueva '
+        '(Cenicafé AT 218, 1998).\n\n'
+        'Fuente: Cenicafé AT 218 (1998), AT 420 (2012); FNC SICA Colombia 2019.',
+  ),
+  _Topic(
+    title: 'Tueste: curva y parámetros clave',
+    icon: Icons.show_chart_outlined,
+    tags: ['tueste', 'temperatura', 'primer crack', 'dtr', 'agtron', 'maillard', 'desarrollo'],
+    content:
+        'El tueste transforma el café verde en café tostado mediante reacciones '
+        'de Maillard, caramelización y pirólisis.\n\n'
+        'PARÁMETROS ESENCIALES:\n'
+        '• Temperatura de carga (Charge Temp): temperatura del tambor al '
+        'introducir el grano. Típico: 160–220 °C según máquina y lote.\n'
+        '• Turning point: momento de mínima temperatura (~75–100 °C): '
+        'el grano absorbe calor (endotérmico). Ocurre ~1–2 min.\n'
+        '• Primer crack: inicio a ~196–204 °C grano. Exotérmico. '
+        'El café libera CO₂, agua y compuestos aromáticos.\n'
+        '• Temperatura de caída (Drop Temp): temperatura al finalizar. '
+        'Tostado ligero: 195–210 °C. Medio: 210–220 °C. Oscuro: > 220 °C.\n\n'
+        'DEVELOPMENT TIME RATIO (DTR):\n'
+        '• DTR = tiempo desde primer crack / tiempo total de tueste.\n'
+        '• Rango especialidad: 20–25 % (Scott Rao). '
+        '< 20 %: underdeveloped (herbal, grassy). '
+        '> 25 %: overdeveloped (plano, horneado).\n\n'
+        'PÉRDIDA DE PESO (roast loss):\n'
+        '• Ligero: 12–14 %. Medio: 14–18 %. Oscuro: 18–25 %.\n'
+        'Mayor pérdida = mayor desarrollo = menor acidez + mayor amargor.\n\n'
+        'COLOR AGTRON:\n'
+        '• Whole bean: 75–55 (ligero–medio). Ground: 65–45 (ligero–medio).\n'
+        '• SCA define "specialty roast" entre 58–63 Agtron whole bean.\n\n'
+        'Fuente: Scott Rao "Coffee Roasters Companion" 2014; '
+        'SCA Roasting Standards 2017; Simonsen, "Roasting Coffee" 2020.',
+  ),
 ];
 
 // ── System prompt para Q&A ──────────────────────────────────────────────────
@@ -276,7 +441,36 @@ Difluid R2. Rendimiento extracción 18–22% (SCA Brewing 2019).
 
 TUESTE REPOSO: Filtro 5–21 días. Espresso 10–30 días. >45d filtro = oxidación (SCA/Scott Rao).
 
-Responde siempre en español. Sé conciso, técnico y práctico. Si la pregunta no es sobre '
+VARIEDADES (arábica colombiana):
+- Geisha: SCA 88–92 pts, sensibilidad muy alta, altitud 1700–2200 m, lavado/anaeróbico, perfiles jazmín/bergamota/durazno.
+- Pink Bourbon: SCA 86–90, sensibilidad muy alta, 1600–2000 m, honey/anaeróbico, perfiles frutos rojos/rosas/panela.
+- Typica: SCA 85–88, alta, 1400–2000 m, lavado, perfiles caramelo/chocolate/fruta suave.
+- Borbón: SCA 84–87, alta, 1200–1800 m, lavado/natural, perfiles caramelo/avellana/cereza.
+- Caturra: SCA 83–86, alta, 1200–1900 m, lavado, perfiles cítrico/limón/panela (Cenicafé AT 335).
+- Castillo: SCA 82–85, media, 1000–2000 m, lavado, perfiles caramelo/chocolate/fruta roja, resistente roya (Cenicafé 2005).
+- Colombia: SCA 81–84, media, 1200–1800 m, lavado, perfiles caramelo/chocolate amargo, resistente roya+CBD.
+- Tabi: SCA 84–87, alta, 1500–2000 m, lavado, perfiles floral/tropical/chocolate (Cenicafé 2002).
+Fuente: WCR Variety Catalog 2022; Cenicafé AT 335, 420, 457; FNC Colombia.
+
+ALTITUD Y CALIDAD: <1000m: acidez baja, cuerpo alto, <83 SCA. 1000–1500m: equilibrado, 82–85 SCA.
+1500–1900m: zona óptima colombiana, 84–88 SCA. 1900–2200m: alta montaña, acidez brillante, 86–92 SCA.
+Cada 300m de ascenso ≈ 1 mes más de maduración. Fuente: Cenicafé AT 420 (2012).
+
+PROCESO Y PERFILES: Lavado: limpio, acidez brillante, terroir expresado, 16–36h fermentación.
+Natural: cuerpo alto, vino, fruta tropical, secado 20–40 días. Honey: dulzor, melado, body intermedio.
+Anaeróbico láctico: láctico limpio, tropical intenso, pH 3.8–4.2, <20°C. Fuente: SCA Processing 2021; WCR Fermentation 2020.
+
+ANÁLISIS FÍSICO: Densidad verde >0.75 g/cm³ (buena). Humedad 10–12% (SCA/OIC). Aw ≤0.65.
+Defectos: 0 Cat.1 + ≤5 Cat.2 en 350g para especialidad. Malla 17–18 = Supremo colombiano.
+Fuente: SCA Green Defect Handbook (2004); OIC 420 (2009).
+
+AGRONOMÍA: Densidad siembra 5000–8000 plantas/ha. Rendimiento 1.5–2.5 t/ha/año.
+Soca (zoqueo): renovación a 20–30cm, producción reinicia 18–24 meses (Cenicafé AT 218).
+
+TUESTE: DTR 20–25% (Scott Rao). Pérdida: ligero 12–14%, medio 14–18%, oscuro 18–25%.
+Agtron whole bean 75–55 (ligero–medio). Fuente: Scott Rao "Coffee Roasters Companion" 2014.
+
+Responde siempre en español. Sé conciso, técnico y práctico. Si la pregunta no es sobre
 café o agronomía de café, redirige amablemente. Cita las fuentes cuando sea relevante.
 ''';
 

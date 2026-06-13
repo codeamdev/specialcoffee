@@ -9,10 +9,12 @@ import 'package:special_coffee/core/database/app_database.dart';
 import 'package:special_coffee/core/di/providers.dart';
 import 'package:special_coffee/core/theme/app_colors.dart';
 import 'package:special_coffee/core/theme/app_text_styles.dart';
+import 'package:special_coffee/domain/entities/coffee_variety.dart';
 import 'package:special_coffee/domain/entities/lot.dart';
 import 'package:special_coffee/presentation/providers/auth_provider.dart';
 import 'package:special_coffee/presentation/providers/cupping_provider.dart';
 import 'package:special_coffee/presentation/providers/lot_provider.dart';
+import 'package:special_coffee/presentation/providers/varieties_provider.dart';
 
 class LotDetailScreen extends ConsumerWidget {
   const LotDetailScreen({super.key, required this.lotId});
@@ -135,17 +137,29 @@ class LotDetailScreen extends ConsumerWidget {
       '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
 }
 
-class _LotDetail extends StatelessWidget {
+class _LotDetail extends ConsumerWidget {
   const _LotDetail({required this.lot});
 
   final Lot lot;
 
+  static String _plantTypeLabel(String t) => switch (t) {
+        'nuevo'     => 'Nuevo',
+        'reciembra' => 'Reciembra',
+        'soca'      => 'Soca',
+        _           => t,
+      };
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final varietiesAsync = ref.watch(coffeeVarietiesProvider);
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 48),
       children: [
         _HeaderCard(lot: lot),
+        varietiesAsync.whenData((varieties) {
+          final v = varieties.where((v) => v.id == lot.varietyId).firstOrNull;
+          return v != null ? _VarietyCard(variety: v) : const SizedBox.shrink();
+        }).value ?? const SizedBox.shrink(),
         const SizedBox(height: 16),
         _SectionTitle('Condiciones ambientales'),
         const SizedBox(height: 8),
@@ -159,6 +173,19 @@ class _LotDetail extends StatelessWidget {
           if (lot.longitude != null)
             _InfoItem(Icons.gps_fixed_outlined, 'Longitud', lot.longitude!.toStringAsFixed(6)),
         ]),
+        if (lot.farmAreaHa != null || lot.plantAgeYears != null || lot.plantType != null) ...[
+          const SizedBox(height: 20),
+          _SectionTitle('Datos del cultivo'),
+          const SizedBox(height: 8),
+          _InfoGrid([
+            if (lot.farmAreaHa != null)
+              _InfoItem(Icons.landscape_outlined, 'Área finca', '${lot.farmAreaHa!.toStringAsFixed(1)} ha'),
+            if (lot.plantAgeYears != null)
+              _InfoItem(Icons.calendar_today_outlined, 'Edad plantas', '${lot.plantAgeYears} años'),
+            if (lot.plantType != null)
+              _InfoItem(Icons.agriculture_outlined, 'Tipo plantación', _plantTypeLabel(lot.plantType!)),
+          ]),
+        ],
         const SizedBox(height: 20),
         if (lot.notes != null && lot.notes!.isNotEmpty) ...[
           _SectionTitle('Notas'),
@@ -171,6 +198,117 @@ class _LotDetail extends StatelessWidget {
     );
   }
 }
+
+// ── Variety info card ────────────────────────────────────────────────────────
+
+class _VarietyCard extends StatelessWidget {
+  const _VarietyCard({required this.variety});
+
+  final CoffeeVariety variety;
+
+  @override
+  Widget build(BuildContext context) {
+    final perfiles = variety.perfilesSabor;
+    final altMin   = variety.altitudMinMasl;
+    final altMax   = variety.altitudMaxMasl;
+    final proceso  = variety.procesoRecomendado;
+    final sca      = variety.scaPotential;
+
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.caramel.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.caramel.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            const Icon(Icons.eco_outlined, size: 16, color: AppColors.caramel),
+            const SizedBox(width: 6),
+            Text('Ficha de variedad',
+                style: AppTextStyles.labelMedium
+                    .copyWith(color: AppColors.caramel)),
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppColors.caramel.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'SCA ${sca.toStringAsFixed(1)} pts',
+                style: AppTextStyles.labelSmall
+                    .copyWith(color: AppColors.caramel),
+              ),
+            ),
+          ]),
+          const Divider(height: 16, color: AppColors.divider),
+          if (altMin != null && altMax != null)
+            _VarietyRow('Altitud óptima', '$altMin–$altMax m.s.n.m.'),
+          if (proceso != null)
+            _VarietyRow('Proceso recomendado', _procesoLabel(proceso)),
+          if (perfiles != null && perfiles.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text('Perfiles de sabor',
+                style: AppTextStyles.bodySmall
+                    .copyWith(color: AppColors.onSurfaceVariant)),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: perfiles
+                  .map((p) => Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.outlineVariant),
+                        ),
+                        child: Text(p, style: AppTextStyles.bodySmall),
+                      ))
+                  .toList(),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _procesoLabel(String p) => switch (p) {
+        'lavado'    => 'Lavado',
+        'natural'   => 'Natural',
+        'honey'     => 'Honey',
+        'anaerobic' => 'Anaeróbico',
+        _           => p,
+      };
+}
+
+class _VarietyRow extends StatelessWidget {
+  const _VarietyRow(this.label, this.value);
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: AppTextStyles.bodySmall),
+            Text(value,
+                style: AppTextStyles.bodySmall
+                    .copyWith(fontWeight: FontWeight.w600)),
+          ],
+        ),
+      );
+}
+
+// ── Header card ───────────────────────────────────────────────────────────────
 
 class _HeaderCard extends StatelessWidget {
   const _HeaderCard({required this.lot});

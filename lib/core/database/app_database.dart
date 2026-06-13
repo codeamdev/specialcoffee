@@ -116,7 +116,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 23;
+  int get schemaVersion => 24;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -266,6 +266,22 @@ class AppDatabase extends _$AppDatabase {
               );
             } catch (_) {
               // Column already exists — idempotent
+            }
+          }
+          // v24: agronomic + sensory fields on coffee_varieties_catalog
+          if (from < 24) {
+            for (final stmt in const [
+              'ALTER TABLE coffee_varieties_catalog ADD COLUMN especie TEXT NOT NULL DEFAULT \'arabica\'',
+              'ALTER TABLE coffee_varieties_catalog ADD COLUMN altitud_min_masl INTEGER',
+              'ALTER TABLE coffee_varieties_catalog ADD COLUMN altitud_max_masl INTEGER',
+              'ALTER TABLE coffee_varieties_catalog ADD COLUMN proceso_recomendado TEXT',
+              'ALTER TABLE coffee_varieties_catalog ADD COLUMN perfiles_sabor TEXT',
+            ]) {
+              try {
+                await m.database.customStatement(stmt);
+              } catch (_) {
+                // Column already exists — idempotent
+              }
             }
           }
         },

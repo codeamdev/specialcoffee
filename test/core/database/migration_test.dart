@@ -75,9 +75,21 @@ void main() {
     expect(cols, contains('synced_at'));
   });
 
-  test('final schema version is 23', () async {
+  // v22 / v23: coffee_references columns — table doesn't exist in v13 seed,
+  // so ALTER TABLE fails silently via try-catch. Migration must not throw.
+  test('v22/v23 — migration does not throw when coffee_references absent', () async {
+    // If we reach here, the migration ran without crashing (try-catch worked).
+    expect(true, isTrue);
+  });
+
+  // v24: coffee_varieties_catalog columns — table absent in v13 seed; same as above.
+  test('v24 — migration does not throw when coffee_varieties_catalog absent', () async {
+    expect(true, isTrue);
+  });
+
+  test('final schema version is 24', () async {
     final row = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(row.read<int>('user_version'), 23);
+    expect(row.read<int>('user_version'), 24);
   });
 
   test('local_lots retains v13 columns after migration', () async {
